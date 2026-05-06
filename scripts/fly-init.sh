@@ -42,8 +42,8 @@ for var in DATABASE_URL JWT_SECRET API_TOKEN_PEPPER SUPABASE_URL SUPABASE_SERVIC
 done
 
 echo "--- Creating Fly.io app: $APP_NAME ---"
-fly launch --name "$APP_NAME" --region sin --no-deploy --yes 2>/dev/null || \
-  echo "App already exists, skipping launch."
+fly apps create "$APP_NAME" 2>/dev/null || \
+  echo "App already exists, skipping."
 
 echo ""
 echo "--- Setting secrets ---"
