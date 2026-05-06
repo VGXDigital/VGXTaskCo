@@ -1,5 +1,6 @@
 // Copyright (c) 2026 VGX Global Consulting (OPC) Private Limited. All rights reserved.
 // Response shape assertions added in v0.6.7 to catch backend→frontend contract breaks.
+// v0.6.9: GET /tasks/:id, cross-project GET /tasks, CORS preflight for PATCH.
 
 import { describe, it, expect, beforeAll } from 'vitest';
 import type { FastifyInstance } from 'fastify';
@@ -761,5 +762,202 @@ describe('POST /tasks/bulk/delete', () => {
     });
     const listBodyB = listResB.json<{ data: { id: string }[] }>();
     expect(listBodyB.data.find((t) => t.id === otherId)).toBeDefined();
+  });
+});
+
+// ── GET /tasks/:id ─────────────────────────────────────────────────────────────
+
+describe('GET /tasks/:id', () => {
+  let app: FastifyInstance;
+  let tokenA: string;
+  let tokenB: string;
+  let projectId: string;
+
+  beforeAll(async () => {
+    app = await buildTestApp();
+    const userA = await registerUser(app, uniqueEmail());
+    tokenA = userA.token;
+    const userB = await registerUser(app, uniqueEmail());
+    tokenB = userB.token;
+    projectId = await createProject(app, tokenA, 'Get Single Task Project');
+  });
+
+  it('returns 200 with full task shape', async () => {
+    const taskId = await createTask(app, tokenA, projectId, {
+      title: 'Single Task',
+      status: 'IN_PROGRESS',
+      priority: 'HIGH',
+    });
+
+    const res = await app.inject({
+      method: 'GET',
+      url: `/tasks/${taskId}`,
+      headers: { authorization: `Bearer ${tokenA}` },
+    });
+
+    expect(res.statusCode).toBe(200);
+    const body = res.json<{ data: { id: string; title: string; status: string; priority: string; projectId: string } }>();
+    expect(typeof body.data.id).toBe('string');
+    expect(body.data.id).toBe(taskId);
+    expect(typeof body.data.title).toBe('string');
+    expect(body.data.title).toBe('Single Task');
+    expect(body.data.status).toBe('IN_PROGRESS');
+    expect(body.data.priority).toBe('HIGH');
+    expect(typeof body.data.projectId).toBe('string');
+    expect(body.data.projectId).toBe(projectId);
+  });
+
+  it('returns 404 for non-existent task id', async () => {
+    // A well-formed CUID that doesn't exist in the DB
+    const fakeId = 'claaaaaaaaaaaaaaaaaaaaaaa';
+    const res = await app.inject({
+      method: 'GET',
+      url: `/tasks/${fakeId}`,
+      headers: { authorization: `Bearer ${tokenA}` },
+    });
+    expect(res.statusCode).toBe(404);
+    const body = res.json<{ error: string }>();
+    expect(typeof body.error).toBe('string');
+  });
+
+  it('returns 401 without auth token', async () => {
+    const taskId = await createTask(app, tokenA, projectId, { title: 'Unauthed Get Task' });
+    const res = await app.inject({
+      method: 'GET',
+      url: `/tasks/${taskId}`,
+    });
+    expect(res.statusCode).toBe(401);
+  });
+
+  it('returns 403 or 404 when task belongs to another user\'s project', async () => {
+    const taskId = await createTask(app, tokenA, projectId, { title: 'Protected Get Task' });
+    const res = await app.inject({
+      method: 'GET',
+      url: `/tasks/${taskId}`,
+      headers: { authorization: `Bearer ${tokenB}` },
+    });
+    // service returns null for unauthorized access → 404
+    expect(res.statusCode).toBe(404);
+    const body = res.json<{ error: string }>();
+    expect(typeof body.error).toBe('string');
+  });
+});
+
+// ── GET /tasks?projectIds=id1,id2 (cross-project) ──────────────────────────────
+
+describe('GET /tasks?projectIds (cross-project)', () => {
+  let app: FastifyInstance;
+  let tokenA: string;
+  let tokenB: string;
+  let projectId1: string;
+  let projectId2: string;
+  let projectIdB: string;
+
+  beforeAll(async () => {
+    app = await buildTestApp();
+    const userA = await registerUser(app, uniqueEmail());
+    tokenA = userA.token;
+    const userB = await registerUser(app, uniqueEmail());
+    tokenB = userB.token;
+    projectId1 = await createProject(app, tokenA, 'Cross Project 1');
+    projectId2 = await createProject(app, tokenA, 'Cross Project 2');
+    projectIdB = await createProject(app, tokenB, 'User B Project Cross');
+
+    await createTask(app, tokenA, projectId1, { title: 'P1 Task Alpha', status: 'TODO', priority: 'LOW' });
+    await createTask(app, tokenA, projectId1, { title: 'P1 Task Beta', status: 'DONE', priority: 'HIGH' });
+    await createTask(app, tokenA, projectId2, { title: 'P2 Task Gamma', status: 'TODO', priority: 'MEDIUM' });
+  });
+
+  it('returns 200 with tasks from multiple owned projects', async () => {
+    const res = await app.inject({
+      method: 'GET',
+      url: `/tasks?projectIds=${projectId1},${projectId2}`,
+      headers: { authorization: `Bearer ${tokenA}` },
+    });
+    expect(res.statusCode).toBe(200);
+    const body = res.json<{ data: { id: string; projectId: string }[] }>();
+    expect(Array.isArray(body.data)).toBe(true);
+    expect(body.data.length).toBeGreaterThanOrEqual(3);
+    const projectIds = new Set(body.data.map((t) => t.projectId));
+    expect(projectIds.has(projectId1)).toBe(true);
+    expect(projectIds.has(projectId2)).toBe(true);
+    // Shape assertions
+    if (body.data.length > 0) {
+      const task = body.data[0];
+      expect(typeof task.id).toBe('string');
+      expect(typeof task.projectId).toBe('string');
+    }
+  });
+
+  it('filters by projectIds correctly — only returns tasks from those projects', async () => {
+    const res = await app.inject({
+      method: 'GET',
+      url: `/tasks?projectIds=${projectId1}`,
+      headers: { authorization: `Bearer ${tokenA}` },
+    });
+    expect(res.statusCode).toBe(200);
+    const body = res.json<{ data: { projectId: string }[] }>();
+    for (const task of body.data) {
+      expect(task.projectId).toBe(projectId1);
+    }
+  });
+
+  it('returns 404 if any projectId belongs to another user', async () => {
+    const res = await app.inject({
+      method: 'GET',
+      url: `/tasks?projectIds=${projectId1},${projectIdB}`,
+      headers: { authorization: `Bearer ${tokenA}` },
+    });
+    // listTasksForProjects returns null when ownership check fails → 404
+    expect(res.statusCode).toBe(404);
+    const body = res.json<{ error: string }>();
+    expect(typeof body.error).toBe('string');
+  });
+
+  it('returns 200 with empty array if project has no tasks matching filter', async () => {
+    const emptyProject = await createProject(app, tokenA, 'Empty Cross Project');
+    const res = await app.inject({
+      method: 'GET',
+      url: `/tasks?projectIds=${emptyProject}`,
+      headers: { authorization: `Bearer ${tokenA}` },
+    });
+    expect(res.statusCode).toBe(200);
+    const body = res.json<{ data: unknown[] }>();
+    expect(Array.isArray(body.data)).toBe(true);
+    expect(body.data).toHaveLength(0);
+  });
+
+  it('returns 401 without auth token', async () => {
+    const res = await app.inject({
+      method: 'GET',
+      url: `/tasks?projectIds=${projectId1}`,
+    });
+    expect(res.statusCode).toBe(401);
+  });
+});
+
+// ── CORS — OPTIONS preflight for PATCH /tasks/:id ──────────────────────────────
+
+describe('CORS OPTIONS preflight for PATCH /tasks/:id', () => {
+  let app: FastifyInstance;
+
+  beforeAll(async () => {
+    app = await buildTestApp();
+  });
+
+  it('returns 204 and Access-Control-Allow-Methods includes PATCH', async () => {
+    const res = await app.inject({
+      method: 'OPTIONS',
+      url: '/tasks/claaaaaaaaaaaaaaaaaaaaaaa',
+      headers: {
+        origin: 'http://localhost:5173',
+        'access-control-request-method': 'PATCH',
+        'access-control-request-headers': 'authorization, content-type',
+      },
+    });
+    expect(res.statusCode).toBe(204);
+    const allowMethods = res.headers['access-control-allow-methods'];
+    expect(typeof allowMethods).toBe('string');
+    expect((allowMethods as string).toUpperCase()).toContain('PATCH');
   });
 });

@@ -1,6 +1,6 @@
 # VGXTaskCo
 
-**Version: 0.6.8**
+**Version: 0.6.9**
 
 The reference implementation for [VGX Global Consulting's AI-Powered Development with Claude masterclass](https://vgx.guru). Built live during the course to demonstrate AI-assisted full-stack development — every commit, prompt, and architectural decision is traceable to the build sequence in `vgxtaskco-build.md`.
 

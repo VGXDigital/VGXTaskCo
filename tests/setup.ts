@@ -14,6 +14,7 @@ import commentRoutes from '../src/routes/comments.js';
 import apiTokenRoutes from '../src/routes/api-tokens.js';
 import searchRoutes from '../src/routes/search.js';
 import reminderRoutes from '../src/routes/reminders.js';
+import taskParseRoutes from '../src/routes/tasks-parse.js';
 import { prisma } from '../src/lib/prisma.js';
 
 /**
@@ -25,7 +26,11 @@ export async function buildTestApp() {
   const app = Fastify({ logger: false });
 
   await app.register(helmet);
-  await app.register(cors, { origin: true, credentials: true });
+  await app.register(cors, {
+    origin: true,
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  });
   await app.register(sensible);
   await app.register(authRoutes, { prefix: '/auth' });
   await app.register(projectRoutes, { prefix: '/projects' });
@@ -35,6 +40,7 @@ export async function buildTestApp() {
   await app.register(apiTokenRoutes);
   await app.register(searchRoutes);
   await app.register(reminderRoutes);
+  await app.register(taskParseRoutes);
 
   app.get('/', async () => ({
     data: { status: 'ok', service: 'vgx-taskco', version: '0.1.0' },
