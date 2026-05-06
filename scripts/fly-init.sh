@@ -58,7 +58,7 @@ fly secrets set \
 
 echo ""
 echo "--- Deploying ---"
-fly deploy --app "$APP_NAME"
+fly deploy --remote-only --app "$APP_NAME"
 
 echo ""
 echo "Backend live at: https://$APP_NAME.fly.dev"
