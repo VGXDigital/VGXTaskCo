@@ -1,6 +1,6 @@
 # VGXTaskCo
 
-**Version: 0.6.4**
+**Version: 0.6.5**
 
 The reference implementation for [VGX Global Consulting's AI-Powered Development with Claude masterclass](https://vgx.guru). Built live during the course to demonstrate AI-assisted full-stack development — every commit, prompt, and architectural decision is traceable to the build sequence in `vgxtaskco-build.md`.
 
@@ -57,6 +57,17 @@ For VGX VPS: see [VPS Setup](prompts/VPS-SETUP.md) + GitHub Actions workflow in 
 ---
 
 ## Changelog
+
+### 0.6.5 (2026-05-07)
+
+- Comprehensive frontend unit tests: 80 new tests across 7 new test files
+- `query.test.ts` — `buildTaskQueryString` (empty, string, array, boolean, multi-filter)
+- `supabase.test.ts` — `getSSOUrl` (provider variants, URL structure, redirect_to encoding)
+- `download-csv.test.ts` — `downloadCSV` (happy path, auth headers, Content-Disposition, error handling)
+- `useProjects.test.ts` — fetch, create, update, delete + cache invalidation
+- `useTags.test.ts` — fetch, create, delete, attachTags
+- `useApiTokens.test.ts` — fetch, create (with expiresInDays), revoke + cache invalidation
+- `TaskCard.test.tsx` — title, priority badge, due date, overdue styling, click handler, tag chips + overflow
 
 ### 0.6.2 (2026-05-07)
 
