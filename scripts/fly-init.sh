@@ -32,11 +32,12 @@ JWT_SECRET=$(get_env JWT_SECRET)
 API_TOKEN_PEPPER=$(get_env API_TOKEN_PEPPER)
 SUPABASE_URL=$(get_env SUPABASE_URL)
 SUPABASE_SERVICE_ROLE_KEY=$(get_env SUPABASE_SERVICE_ROLE_KEY)
+ALLOWED_FRONTEND_ORIGINS=$(get_env ALLOWED_FRONTEND_ORIGINS)
 
 # Validate required vars
-for var in DATABASE_URL JWT_SECRET API_TOKEN_PEPPER SUPABASE_URL SUPABASE_SERVICE_ROLE_KEY; do
+for var in DATABASE_URL JWT_SECRET API_TOKEN_PEPPER SUPABASE_URL SUPABASE_SERVICE_ROLE_KEY ALLOWED_FRONTEND_ORIGINS; do
   if [[ -z "${!var}" ]]; then
-    echo "ERROR: $var is empty in .env"
+    echo "ERROR: $var is empty in .env — set it to your Vercel URL before running this script"
     exit 1
   fi
 done
@@ -47,15 +48,14 @@ fly apps create "$APP_NAME" 2>/dev/null || \
 
 echo ""
 echo "--- Setting secrets ---"
-VERCEL_URL="${VERCEL_URL:-https://vgxtaskco.vercel.app}"
-
 fly secrets set \
   DATABASE_URL="$DATABASE_URL" \
   JWT_SECRET="$JWT_SECRET" \
   API_TOKEN_PEPPER="$API_TOKEN_PEPPER" \
   SUPABASE_URL="$SUPABASE_URL" \
   SUPABASE_SERVICE_ROLE_KEY="$SUPABASE_SERVICE_ROLE_KEY" \
-  ALLOWED_FRONTEND_ORIGINS="$VERCEL_URL" \
+  ALLOWED_FRONTEND_ORIGINS="$ALLOWED_FRONTEND_ORIGINS" \
+  PORT="4000" \
   NODE_ENV="production" \
   --app "$APP_NAME"
 
@@ -70,5 +70,5 @@ echo "Add this as the FLY_API_TOKEN GitHub secret for auto-deploy on push:"
 echo ""
 fly tokens create deploy -x 999999h --app "$APP_NAME"
 echo ""
-echo "Done. Now set ALLOWED_FRONTEND_ORIGINS once you have your Vercel URL:"
-echo "  fly secrets set ALLOWED_FRONTEND_ORIGINS=\"https://your-project.vercel.app\" --app $APP_NAME"
+echo "Done. If your Vercel URL differs from what is in .env, update it with:"
+echo "  fly secrets set ALLOWED_FRONTEND_ORIGINS=\"https://your-actual-url.vercel.app\" --app $APP_NAME"
