@@ -1,0 +1,27 @@
+# Copyright (c) 2026 VGX Global Consulting (OPC) Private Limited. All rights reserved.
+# Auto-deploy backend to Fly.io on every push to main.
+# Vercel handles the frontend automatically via GitHub integration — no job needed here.
+
+name: Deploy Free Tier (Fly.io)
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-fly-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  deploy-fly:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: superfly/flyctl-actions/setup-flyctl@master
+
+      - name: Deploy to Fly.io
+        run: fly deploy --remote-only
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
