@@ -23,9 +23,11 @@ export function AuthCallbackPage({ onLogin }: AuthCallbackPageProps) {
   useEffect(() => {
     const hash = window.location.hash
 
-    // If no hash at all, the user navigated here directly — send them to login
+    // No hash: either the user navigated here directly, or the hash was already
+    // consumed and cleared by a previous run of this effect (React StrictMode
+    // fires effects twice in dev). In both cases just return — App.tsx state
+    // handles routing (shows login if not logged in, dashboard if logged in).
     if (!hash) {
-      window.location.replace('/')
       return
     }
 
@@ -34,13 +36,16 @@ export function AuthCallbackPage({ onLogin }: AuthCallbackPageProps) {
     const errorDescription = params.get('error_description')
     const accessToken = params.get('access_token')
 
+    // Clear the hash immediately so React StrictMode's second effect run
+    // sees no token and exits early, preventing a duplicate exchange call.
+    window.history.replaceState(null, '', window.location.pathname + window.location.search)
+
     if (errorCode) {
       setError(errorDescription ?? errorCode)
       return
     }
 
     if (!accessToken) {
-      window.location.replace('/')
       return
     }
 
@@ -48,6 +53,9 @@ export function AuthCallbackPage({ onLogin }: AuthCallbackPageProps) {
       .post<SSOExchangeResponse>('/auth/sso/exchange', { accessToken })
       .then(({ token }) => {
         setToken(token)
+        // Navigate away from /auth/callback before calling onLogin so App.tsx
+        // doesn't re-render the callback page again (it checks window.location.pathname).
+        window.history.replaceState(null, '', '/')
         onLogin()
       })
       .catch((err: unknown) => {
