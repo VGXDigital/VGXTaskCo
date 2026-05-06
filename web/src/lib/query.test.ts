@@ -29,6 +29,10 @@ describe('buildTaskQueryString — array filters', () => {
     expect(buildTaskQueryString({ tagIds: ['a'] })).toBe('?tagIds=a')
   })
 
+  it('joins two items with a comma', () => {
+    expect(buildTaskQueryString({ tagIds: ['a', 'b'] })).toBe('?tagIds=a%2Cb')
+  })
+
   it('joins multiple items with commas', () => {
     expect(buildTaskQueryString({ tagIds: ['a', 'b', 'c'] })).toBe('?tagIds=a%2Cb%2Cc')
   })
