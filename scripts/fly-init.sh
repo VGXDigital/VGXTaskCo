@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Copyright (c) 2026 VGX Global Consulting (OPC) Private Limited. All rights reserved.
 # One-time Fly.io setup for VGXTaskCo backend.
-# Run from repo root after: flyctl auth login  (or: fly auth login)
+# Run from repo root after: fly auth login
 #
 # Usage: bash scripts/fly-init.sh
 
@@ -17,11 +17,7 @@ if [[ ! -f "$ENV_FILE" ]]; then
   exit 1
 fi
 
-if command -v flyctl &>/dev/null; then
-  FLY=flyctl
-elif command -v fly &>/dev/null; then
-  FLY=fly
-else
+if ! command -v fly &>/dev/null; then
   echo "ERROR: flyctl not installed. Run: curl -L https://fly.io/install.sh | sh"
   exit 1
 fi
@@ -46,12 +42,12 @@ for var in DATABASE_URL JWT_SECRET API_TOKEN_PEPPER SUPABASE_URL SUPABASE_SERVIC
 done
 
 echo "--- Creating Fly.io app: $APP_NAME ---"
-$FLY launch --name "$APP_NAME" --region sin --no-deploy --yes 2>/dev/null || \
+fly launch --name "$APP_NAME" --region sin --no-deploy --yes 2>/dev/null || \
   echo "App already exists, skipping launch."
 
 echo ""
 echo "--- Setting secrets ---"
-$FLY secrets set \
+fly secrets set \
   DATABASE_URL="$DATABASE_URL" \
   JWT_SECRET="$JWT_SECRET" \
   API_TOKEN_PEPPER="$API_TOKEN_PEPPER" \
@@ -62,14 +58,14 @@ $FLY secrets set \
 
 echo ""
 echo "--- Deploying ---"
-$FLY deploy --app "$APP_NAME"
+fly deploy --app "$APP_NAME"
 
 echo ""
 echo "Backend live at: https://$APP_NAME.fly.dev"
 echo ""
 echo "Add this as the FLY_API_TOKEN GitHub secret for auto-deploy on push:"
 echo ""
-$FLY tokens create deploy -x 999999h --app "$APP_NAME"
+fly tokens create deploy -x 999999h --app "$APP_NAME"
 echo ""
 echo "Done. Now set ALLOWED_FRONTEND_ORIGINS once you have your Vercel URL:"
-echo "  $FLY secrets set ALLOWED_FRONTEND_ORIGINS=\"https://your-project.vercel.app\" --app $APP_NAME"
+echo "  fly secrets set ALLOWED_FRONTEND_ORIGINS=\"https://your-project.vercel.app\" --app $APP_NAME"
