@@ -1,89 +1,76 @@
 # VGXTaskCo
 
-A Fastify 5 + TypeScript + Prisma 7 task management backend API with JWT authentication, project and task CRUD, and PostgreSQL via the pg driver adapter.
+**Version: 0.1.0**
 
-## Version
+The reference implementation for [VGX Global Consulting's AI-Powered Development with Claude masterclass](https://vgx.guru). Built live during the course to demonstrate AI-assisted full-stack development — every commit, prompt, and architectural decision is traceable to the build sequence in `vgxtaskco-build.md`.
 
-**0.1.0**
+> This is the benchmark app, not the course handouts. If you're a cohort participant, you're building your own version — not copying this one.
 
-## Tech Stack
+---
 
-- **Runtime**: Node.js 20+
-- **Framework**: Fastify 5.x with `@fastify/helmet`, `@fastify/cors`, `@fastify/sensible`
-- **ORM**: Prisma 7.x with `@prisma/adapter-pg` (pg driver adapter)
-- **Auth**: JWT via `jose`, bcrypt password hashing
-- **Validation**: Zod 4.x
-- **Language**: TypeScript 6.x (strict mode)
+## What it is
 
-## Prerequisites
+A task management app: projects, tasks, tags, comments, saved views, CSV export, n8n webhooks, API tokens, full activity and audit log, Google + GitHub SSO via Supabase Auth.
 
-- Node.js >= 20.19 or >= 22.12
-- pnpm
-- PostgreSQL instance accessible via `DATABASE_URL`
+**Backend** — TypeScript + Fastify + Prisma + PostgreSQL (Neon)
+**Frontend** — React + Vite + Tailwind v3 + TanStack Query
+**Auth** — JWT (local) + Supabase Auth (Google, GitHub, Azure/M365)
+**Deploy** — Docker + GitHub Actions → VPS or Fly.io
 
-## Environment Variables
+---
 
-Copy `.env.example` to `.env` and set:
-
-```
-DATABASE_URL=postgresql://user:password@localhost:5432/vgxtaskco
-JWT_SECRET=<minimum 32 characters>
-API_TOKEN_PEPPER=<minimum 32 characters>
-PORT=4000                          # optional, default 4000
-NODE_ENV=development               # development | production | test
-ALLOWED_FRONTEND_ORIGINS=http://localhost:5173  # required in production
-```
-
-## Build & Run
+## Quickstart (local dev)
 
 ```bash
-# Install dependencies
+# Backend
+cp .env.example .env      # fill in DATABASE_URL, JWT_SECRET, API_TOKEN_PEPPER, SUPABASE_*
 pnpm install
+pnpm prisma migrate deploy
+pnpm dev                  # http://localhost:4000
 
-# Generate Prisma client (required after install or schema changes)
-pnpm exec prisma generate
-
-# Run database migrations
-pnpm exec prisma migrate deploy
-
-# Development (tsx watch)
-pnpm dev
-
-# Type-check only (no emit)
-pnpm typecheck
-
-# Build to dist/
-pnpm build
-
-# Start production build
-pnpm start
+# Frontend (separate terminal)
+cd web
+cp .env.example .env.local   # fill in VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY
+pnpm install
+pnpm dev                  # http://localhost:5173
 ```
 
-## API Routes
+## Running tests
 
-| Method | Path | Auth | Description |
-|--------|------|------|-------------|
-| POST | /auth/register | — | Create account, returns JWT |
-| POST | /auth/login | — | Authenticate, returns JWT |
-| GET | /auth/me | JWT | Current user profile |
-| POST | /projects | JWT | Create project |
-| GET | /projects | JWT | List owned projects |
-| GET | /projects/:id | JWT | Get project with task count |
-| PATCH | /projects/:id | JWT | Update project |
-| DELETE | /projects/:id | JWT | Delete project (cascades tasks) |
-| POST | /projects/:projectId/tasks | JWT | Create task |
-| GET | /projects/:projectId/tasks | JWT | List tasks (filterable) |
-| PATCH | /tasks/:id | JWT | Update task |
-| DELETE | /tasks/:id | JWT | Delete task |
+```bash
+# Backend integration tests (Vitest, hits real Neon DB)
+pnpm test              # 120 tests
+
+# Frontend unit tests (Vitest, jsdom)
+cd web && pnpm test    # 22 tests
+
+# Feature matrix E2E (Playwright — requires both dev servers running)
+pnpm test:features
+```
+
+## Deploy (free tier)
+
+See [Free Deployment Guide](prompts/FREE-DEPLOY.md) — Fly.io (backend) + Vercel (frontend).
+
+For VGX VPS: see [VPS Setup](prompts/VPS-SETUP.md) + GitHub Actions workflow in `.github/workflows/deploy.yml`.
+
+---
 
 ## Changelog
 
-### 0.1.0
+### 0.1.0 (2026-05-06)
 
-- Initial project scaffold
-- Fastify 5 server with helmet, CORS, sensible
-- JWT auth middleware with Prisma user lookup
-- Projects and tasks CRUD with ownership scoping
-- Zod 4 request validation
-- Prisma 7 with pg adapter (PostgreSQL)
-- Environment validation via Zod at startup
+- Full-stack task management: projects, tasks (CRUD + bulk ops + filtering), tags, comments
+- Activity log, audit log (security events), n8n webhooks on all task events
+- Saved views with cross-project filtering, CSV export (RFC 4180), global search
+- Per-user API tokens (HMAC-SHA256 + pepper, service vs user scope)
+- Due-date reminders via n8n cron endpoints
+- Google + GitHub SSO via Supabase Auth; JWT fallback for email/password
+- Service layer with `canAccessProject` as the ownership chokepoint
+- 135-entry Playwright feature matrix with autocorrect loop
+- Docker multi-stage builds, GitHub Actions CI/CD pipeline
+- VGX brand: purple #8337c8, Montserrat/Ubuntu fonts, full dark/light mode parity
+
+---
+
+© 2026 VGX Global Consulting (OPC) Private Limited — [vgx.digital](https://vgx.digital)

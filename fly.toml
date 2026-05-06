@@ -1,0 +1,31 @@
+# Copyright (c) 2026 VGX Global Consulting (OPC) Private Limited. All rights reserved.
+# Fly.io config for free-tier deployment of the VGXTaskCo backend.
+# See prompts/FREE-DEPLOY.md for full setup instructions.
+
+app = "vgxtaskco-api"
+primary_region = "sin"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[http_service]
+  internal_port = 4000
+  force_https = true
+  auto_stop_machines = false
+  auto_start_machines = true
+  min_machines_running = 1
+
+[[vm]]
+  memory = "256mb"
+  cpu_kind = "shared"
+  cpus = 1
+
+[checks]
+  [checks.health]
+    grace_period = "15s"
+    interval = "30s"
+    method = "GET"
+    path = "/"
+    port = 4000
+    timeout = "5s"
+    type = "http"
