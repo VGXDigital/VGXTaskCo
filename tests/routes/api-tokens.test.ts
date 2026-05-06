@@ -1,4 +1,5 @@
 // Copyright (c) 2026 VGX Global Consulting (OPC) Private Limited. All rights reserved.
+// Response shape assertions added in v0.6.7 to catch backend→frontend contract breaks.
 
 import 'dotenv/config';
 import { describe, it, expect, beforeAll } from 'vitest';
@@ -38,7 +39,7 @@ describe('POST /api-tokens', () => {
       payload: { name: 'My CI token' },
     });
     expect(res.statusCode).toBe(201);
-    const body = res.json<{ data: { id: string; name: string; prefix: string; token: string } }>();
+    const body = res.json<{ data: { id: string; name: string; prefix: string; token: string; scope: string } }>();
     expect(body.data.id).toBeTruthy();
     expect(body.data.name).toBe('My CI token');
     expect(body.data.token).toBeTruthy();
@@ -46,6 +47,11 @@ describe('POST /api-tokens', () => {
     expect(body.data.prefix).toBeTruthy();
     // prefix is the first 8 chars after "vgxt_"
     expect(body.data.prefix).toBe(body.data.token.slice(5, 13));
+    // Shape assertions
+    expect(typeof body.data.id).toBe('string');
+    expect(typeof body.data.name).toBe('string');
+    expect(typeof body.data.token).toBe('string');
+    expect(typeof body.data.scope).toBe('string');
   });
 
   it('returns 400 on missing name', async () => {
@@ -112,6 +118,10 @@ describe('GET /api-tokens', () => {
       expect(t['tokenHash']).toBeUndefined();
       // prefix is present
       expect(t['prefix']).toBeTruthy();
+      // Shape assertions: id, name, scope must be strings
+      expect(typeof t['id']).toBe('string');
+      expect(typeof t['name']).toBe('string');
+      expect(typeof t['scope']).toBe('string');
     }
   });
 

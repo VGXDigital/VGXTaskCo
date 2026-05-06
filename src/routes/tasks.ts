@@ -76,7 +76,8 @@ const taskRoutes: FastifyPluginAsync = async (app) => {
       return reply.status(404).send({ error: 'Project not found' });
     }
 
-    return reply.status(201).send({ data: task });
+    // Return task with empty tags array — consistent with listTasks shape
+    return reply.status(201).send({ data: { ...task, tags: [] } });
   });
 
   /**

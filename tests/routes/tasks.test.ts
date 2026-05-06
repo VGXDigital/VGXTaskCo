@@ -1,4 +1,5 @@
 // Copyright (c) 2026 VGX Global Consulting (OPC) Private Limited. All rights reserved.
+// Response shape assertions added in v0.6.7 to catch backend→frontend contract breaks.
 
 import { describe, it, expect, beforeAll } from 'vitest';
 import type { FastifyInstance } from 'fastify';
@@ -82,10 +83,16 @@ describe('POST /projects/:id/tasks', () => {
       payload: { title: 'Default Task' },
     });
     expect(res.statusCode).toBe(201);
-    const body = res.json<{ data: { id: string; status: string; priority: string } }>();
+    const body = res.json<{ data: { id: string; title: string; status: string; priority: string; projectId: string; tags: unknown[] } }>();
     expect(body.data.id).toBeTruthy();
     expect(body.data.status).toBe('TODO');
     expect(body.data.priority).toBe('MEDIUM');
+    // Shape assertions
+    expect(typeof body.data.id).toBe('string');
+    expect(typeof body.data.title).toBe('string');
+    expect(typeof body.data.status).toBe('string');
+    expect(typeof body.data.projectId).toBe('string');
+    expect(Array.isArray(body.data.tags)).toBe(true);
   });
 
   it('returns 201 with explicit status IN_PROGRESS and priority HIGH', async () => {
@@ -205,8 +212,19 @@ describe('GET /projects/:id/tasks', () => {
       headers: { authorization: `Bearer ${tokenA}` },
     });
     expect(res.statusCode).toBe(200);
-    const body = res.json<{ data: unknown[] }>();
+    const body = res.json<{ data: { id: string; title: string; status: string; priority: string; projectId: string; tags: unknown[] }[] }>();
+    expect(Array.isArray(body.data)).toBe(true);
     expect(body.data.length).toBeGreaterThanOrEqual(4);
+    // Shape assertions on list items
+    if (body.data.length > 0) {
+      const task = body.data[0];
+      expect(typeof task.id).toBe('string');
+      expect(typeof task.title).toBe('string');
+      expect(typeof task.status).toBe('string');
+      expect(typeof task.priority).toBe('string');
+      expect(typeof task.projectId).toBe('string');
+      expect(Array.isArray(task.tags)).toBe(true);
+    }
   });
 
   it('?status=TODO returns only TODO tasks', async () => {

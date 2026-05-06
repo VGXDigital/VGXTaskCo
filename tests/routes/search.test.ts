@@ -1,4 +1,5 @@
 // Copyright (c) 2026 VGX Global Consulting (OPC) Private Limited. All rights reserved.
+// Response shape assertions added in v0.6.7 to catch backend→frontend contract breaks.
 
 import 'dotenv/config';
 import { describe, it, expect, beforeAll } from 'vitest';
@@ -90,11 +91,20 @@ describe('GET /search', () => {
       headers: { authorization: `Bearer ${tokenA}` },
     });
     expect(res.statusCode).toBe(200);
-    const body = res.json<{ data: { projects: unknown[]; tasks: unknown[]; comments: unknown[] } }>();
+    const body = res.json<{ data: { projects: { id: string; name: string }[]; tasks: { id: string; title: string }[]; comments: unknown[] } }>();
     expect(body.data).toBeDefined();
     expect(Array.isArray(body.data.projects)).toBe(true);
     expect(Array.isArray(body.data.tasks)).toBe(true);
     expect(Array.isArray(body.data.comments)).toBe(true);
+    // Shape assertions on search result items
+    if (body.data.projects.length > 0) {
+      expect(typeof body.data.projects[0].id).toBe('string');
+      expect(typeof body.data.projects[0].name).toBe('string');
+    }
+    if (body.data.tasks.length > 0) {
+      expect(typeof body.data.tasks[0].id).toBe('string');
+      expect(typeof body.data.tasks[0].title).toBe('string');
+    }
   });
 
   it('returns project with "audit" in its name', async () => {

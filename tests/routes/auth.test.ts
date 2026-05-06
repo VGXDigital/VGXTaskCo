@@ -1,4 +1,5 @@
 // Copyright (c) 2026 VGX Global Consulting (OPC) Private Limited. All rights reserved.
+// Response shape assertions added in v0.6.7 to catch backend→frontend contract breaks.
 
 import { describe, it, expect, beforeAll } from 'vitest';
 import type { FastifyInstance } from 'fastify';
@@ -29,6 +30,11 @@ describe('POST /auth/register', () => {
     expect(body.data.user.email).toBe(email);
     expect(body.data.user.name).toBe('Test User');
     expect(body.data.user.id).toBeTruthy();
+    // Shape assertions
+    expect(typeof body.data.token).toBe('string');
+    expect(typeof body.data.user.id).toBe('string');
+    expect(typeof body.data.user.email).toBe('string');
+    expect(typeof body.data.user.name).toBe('string');
   });
 
   it('response body has no passwordHash', async () => {
@@ -134,6 +140,11 @@ describe('POST /auth/login', () => {
     expect(body.data.token).toBeTruthy();
     expect(body.data.user.email).toBe(email);
     expect(body.data.user.name).toBe('Login User');
+    // Shape assertions
+    expect(typeof body.data.token).toBe('string');
+    expect(typeof body.data.user.id).toBe('string');
+    expect(typeof body.data.user.email).toBe('string');
+    expect(typeof body.data.user.name).toBe('string');
   });
 
   it('returns 401 with "Invalid credentials" on wrong password', async () => {

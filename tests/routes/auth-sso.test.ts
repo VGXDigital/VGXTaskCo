@@ -1,4 +1,5 @@
 // Copyright (c) 2026 VGX Global Consulting (OPC) Private Limited. All rights reserved.
+// Response shape assertions added in v0.6.7 to catch backend→frontend contract breaks.
 
 import 'dotenv/config';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
@@ -62,6 +63,8 @@ describe('POST /auth/sso/exchange', () => {
     expect(res.statusCode).toBe(401);
     const body = res.json<{ error: string }>();
     expect(body.error).toBe('Invalid SSO token');
+    // Shape assertion on error envelope
+    expect(typeof body.error).toBe('string');
   });
 
   it('returns 201 + JWT + creates user in DB on first Google SSO login', async () => {
@@ -85,10 +88,14 @@ describe('POST /auth/sso/exchange', () => {
       payload: { accessToken: 'valid-google-token' },
     });
     expect(res.statusCode).toBe(201);
-    const body = res.json<{ data: { token: string; user: { email: string; name: string } } }>();
+    const body = res.json<{ data: { token: string; user: { id: string; email: string; name: string } } }>();
     expect(body.data.token).toBeTruthy();
     expect(body.data.user.email).toBe(ssoEmail);
     expect(body.data.user.name).toBe('SSO User');
+    // Shape assertions
+    expect(typeof body.data.token).toBe('string');
+    expect(typeof body.data.user.id).toBe('string');
+    expect(typeof body.data.user.email).toBe('string');
   });
 
   it('returns 200 (not 201) on second login with same Google account', async () => {
@@ -121,8 +128,12 @@ describe('POST /auth/sso/exchange', () => {
       payload: { accessToken: 'valid-google-token-returning' },
     });
     expect(res2.statusCode).toBe(200);
-    const body = res2.json<{ data: { token: string } }>();
+    const body = res2.json<{ data: { token: string; user: { id: string; email: string } } }>();
     expect(body.data.token).toBeTruthy();
+    // Shape assertions
+    expect(typeof body.data.token).toBe('string');
+    expect(typeof body.data.user.id).toBe('string');
+    expect(typeof body.data.user.email).toBe('string');
   });
 
   it('returns 401 "Unsupported provider" for an unsupported OAuth provider', async () => {

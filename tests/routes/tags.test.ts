@@ -1,4 +1,5 @@
 // Copyright (c) 2026 VGX Global Consulting (OPC) Private Limited. All rights reserved.
+// Response shape assertions added in v0.6.7 to catch backend→frontend contract breaks.
 
 import 'dotenv/config';
 import { describe, it, expect, beforeAll } from 'vitest';
@@ -62,8 +63,16 @@ describe('GET /tags', () => {
       headers: { authorization: `Bearer ${tokenA}` },
     });
     expect(res.statusCode).toBe(200);
-    const body = res.json<{ data: { value: string }[] }>();
+    const body = res.json<{ data: { id: string; value: string; color: string }[] }>();
+    expect(Array.isArray(body.data)).toBe(true);
     expect(body.data.some((t) => t.value === 'userA-tag')).toBe(true);
+    // Shape assertions on GET /tags list items
+    if (body.data.length > 0) {
+      const tag = body.data[0];
+      expect(typeof tag.id).toBe('string');
+      expect(typeof tag.value).toBe('string');
+      expect(typeof tag.color).toBe('string');
+    }
   });
 
   it("does not return User A's tags in User B's list", async () => {
@@ -99,9 +108,13 @@ describe('POST /tags', () => {
       payload: { value: 'client:ICA' },
     });
     expect(res.statusCode).toBe(201);
-    const body = res.json<{ data: { id: string; value: string } }>();
+    const body = res.json<{ data: { id: string; value: string; color: string } }>();
     expect(body.data.value).toBe('client:ICA');
     expect(body.data.id).toBeTruthy();
+    // Shape assertions
+    expect(typeof body.data.id).toBe('string');
+    expect(typeof body.data.value).toBe('string');
+    expect(typeof body.data.color).toBe('string');
   });
 
   it('returns 409 on duplicate value for the same user', async () => {

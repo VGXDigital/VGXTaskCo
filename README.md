@@ -1,6 +1,6 @@
 # VGXTaskCo
 
-**Version: 0.6.6**
+**Version: 0.6.7**
 
 The reference implementation for [VGX Global Consulting's AI-Powered Development with Claude masterclass](https://vgx.guru). Built live during the course to demonstrate AI-assisted full-stack development — every commit, prompt, and architectural decision is traceable to the build sequence in `vgxtaskco-build.md`.
 
@@ -57,6 +57,12 @@ For VGX VPS: see [VPS Setup](prompts/VPS-SETUP.md) + GitHub Actions workflow in 
 ---
 
 ## Changelog
+
+### 0.6.7 (2026-05-07)
+
+- Response shape assertions on all backend route tests — verifies field types (string/number/array) on every 200/201 response
+- Catches backend→frontend contract breaks like the `_count.tasks` bug; every route now asserts `typeof field === 'string'`, `Array.isArray(tags)`, and `_count.tasks` is a number
+- Files updated: `tests/routes/projects.test.ts`, `tasks.test.ts`, `tags.test.ts`, `auth.test.ts`, `auth-sso.test.ts`, `api-tokens.test.ts`, `search.test.ts`
 
 ### 0.6.5 (2026-05-07)
 

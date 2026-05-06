@@ -54,6 +54,7 @@ const apiTokenRoutes: FastifyPluginAsync = async (app) => {
         id: apiToken.id,
         name: apiToken.name,
         prefix: apiToken.prefix,
+        scope: apiToken.scope,
         token: rawToken, // shown ONCE
         expiresAt: apiToken.expiresAt,
       },

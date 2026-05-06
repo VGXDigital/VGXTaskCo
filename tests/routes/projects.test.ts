@@ -1,4 +1,5 @@
 // Copyright (c) 2026 VGX Global Consulting (OPC) Private Limited. All rights reserved.
+// Response shape assertions added in v0.6.7 to catch backend→frontend contract breaks.
 
 import { describe, it, expect, beforeAll } from 'vitest';
 import type { FastifyInstance } from 'fastify';
@@ -44,10 +45,15 @@ describe('POST /projects', () => {
       payload: { name: 'My Project', color: '#ff0000' },
     });
     expect(res.statusCode).toBe(201);
-    const body = res.json<{ data: { id: string; name: string; color: string } }>();
+    const body = res.json<{ data: { id: string; name: string; color: string; ownerId: string } }>();
     expect(body.data.id).toBeTruthy();
     expect(body.data.name).toBe('My Project');
     expect(body.data.color).toBe('#ff0000');
+    // Shape assertions
+    expect(typeof body.data.id).toBe('string');
+    expect(typeof body.data.name).toBe('string');
+    expect(typeof body.data.color).toBe('string');
+    expect(typeof body.data.ownerId).toBe('string');
   });
 
   it('returns 201 with default color #3b82f6 when color omitted', async () => {
@@ -201,8 +207,23 @@ describe('GET /projects', () => {
     expect(resA.statusCode).toBe(200);
     expect(resB.statusCode).toBe(200);
 
-    const namesA = resA.json<{ data: { name: string }[] }>().data.map((p) => p.name);
-    const namesB = resB.json<{ data: { name: string }[] }>().data.map((p) => p.name);
+    const bodyA = resA.json<{ data: { id: string; name: string; color: string; ownerId: string; _count: { tasks: number } }[] }>();
+    const bodyB = resB.json<{ data: { id: string; name: string; color: string; ownerId: string; _count: { tasks: number } }[] }>();
+
+    // Shape assertions on GET /projects list items
+    expect(Array.isArray(bodyA.data)).toBe(true);
+    if (bodyA.data.length > 0) {
+      const p = bodyA.data[0];
+      expect(typeof p.id).toBe('string');
+      expect(typeof p.name).toBe('string');
+      expect(typeof p.color).toBe('string');
+      expect(typeof p.ownerId).toBe('string');
+      expect(p._count).toBeDefined();
+      expect(typeof p._count.tasks).toBe('number');
+    }
+
+    const namesA = bodyA.data.map((p) => p.name);
+    const namesB = bodyB.data.map((p) => p.name);
 
     // A sees their own projects
     expect(namesA).toContain('User A Project 1');
@@ -267,11 +288,16 @@ describe('GET /projects/:id', () => {
       headers: { authorization: `Bearer ${tokenA}` },
     });
     expect(res.statusCode).toBe(200);
-    const body = res.json<{ data: { id: string; name: string; _count: { tasks: number } } }>();
+    const body = res.json<{ data: { id: string; name: string; color: string; ownerId: string; _count: { tasks: number } } }>();
     expect(body.data.id).toBe(projectId);
     expect(body.data._count).toBeDefined();
     expect(typeof body.data._count.tasks).toBe('number');
     expect(body.data._count.tasks).toBeGreaterThanOrEqual(1);
+    // Shape assertions
+    expect(typeof body.data.id).toBe('string');
+    expect(typeof body.data.name).toBe('string');
+    expect(typeof body.data.color).toBe('string');
+    expect(typeof body.data.ownerId).toBe('string');
   });
 
   it('returns 404 when project does not exist', async () => {
