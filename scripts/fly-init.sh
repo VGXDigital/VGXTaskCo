@@ -47,12 +47,15 @@ fly apps create "$APP_NAME" 2>/dev/null || \
 
 echo ""
 echo "--- Setting secrets ---"
+VERCEL_URL="${VERCEL_URL:-https://vgxtaskco.vercel.app}"
+
 fly secrets set \
   DATABASE_URL="$DATABASE_URL" \
   JWT_SECRET="$JWT_SECRET" \
   API_TOKEN_PEPPER="$API_TOKEN_PEPPER" \
   SUPABASE_URL="$SUPABASE_URL" \
   SUPABASE_SERVICE_ROLE_KEY="$SUPABASE_SERVICE_ROLE_KEY" \
+  ALLOWED_FRONTEND_ORIGINS="$VERCEL_URL" \
   NODE_ENV="production" \
   --app "$APP_NAME"
 
