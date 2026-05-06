@@ -84,43 +84,58 @@ export function LoginPage({ onLogin }: LoginPageProps) {
         <div>
           <div className="flex items-center gap-3 mb-12">
             <img src="/vgx-dark.webp" alt="VGX" className="h-9 w-auto object-contain" />
-            <span className="font-display text-2xl font-semibold tracking-tight">TaskCo</span>
+            <span className="font-display text-2xl font-semibold tracking-tight opacity-90">VGX Masterclass</span>
           </div>
 
-          <h2 className="font-display text-4xl font-bold leading-tight mb-4">
-            AI-Powered Development<br />with Claude
-          </h2>
-          <p className="text-white/70 text-lg mb-10">
-            The reference implementation built live during the VGX masterclass — every commit, prompt, and architectural decision traceable from day one.
+          <p className="text-sm font-semibold uppercase tracking-widest text-white/50 mb-3">
+            2-Day Intensive · Instructor-Led
           </p>
 
-          <ul className="space-y-4">
+          <h2 className="font-display text-5xl font-bold leading-tight mb-5">
+            Stop Prompting.<br />Start Shipping.
+          </h2>
+
+          <p className="text-white/70 text-base leading-relaxed mb-10">
+            Takes developers from AI-curious to AI-productive. Build a real full-stack app — auth, API, frontend, tests, deployed to cloud — in 8 guided labs.
+          </p>
+
+          {/* Stats row */}
+          <div className="flex gap-8 mb-10">
             {[
-              'Full-stack TypeScript — Fastify, Prisma, React 19',
-              'Production auth — JWT + Google & GitHub SSO',
-              'Real deployment — Fly.io backend, Vercel frontend',
-              'AI-assisted workflow — 60+ structured build prompts',
-            ].map((item) => (
-              <li key={item} className="flex items-start gap-3">
-                <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-white/20">
-                  <svg className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                  </svg>
-                </span>
-                <span className="text-white/80 text-sm">{item}</span>
-              </li>
+              { value: '2', label: 'Days' },
+              { value: '60%', label: 'Hands-on' },
+              { value: '8', label: 'Labs' },
+            ].map(({ value, label }) => (
+              <div key={label}>
+                <p className="font-display text-3xl font-bold">{value}</p>
+                <p className="text-white/50 text-xs uppercase tracking-wider mt-0.5">{label}</p>
+              </div>
             ))}
-          </ul>
+          </div>
+
+          {/* Quote */}
+          <blockquote className="border-l-2 border-white/30 pl-4 mb-10">
+            <p className="text-white/60 text-sm italic leading-relaxed">
+              "Using Claude the way you used Google is like buying a CNC machine and using it as a paperweight."
+            </p>
+          </blockquote>
+
+          {/* This app */}
+          <div className="rounded-xl bg-white/10 border border-white/20 p-4">
+            <p className="text-xs font-semibold uppercase tracking-wider text-white/40 mb-1">You are looking at</p>
+            <p className="text-white/90 text-sm font-medium">TaskCo — the reference app built live during the masterclass.</p>
+            <p className="text-white/50 text-xs mt-1">Every commit, prompt, and decision is traceable.</p>
+          </div>
         </div>
 
-        <div>
+        <div className="pt-8">
           <a
             href="https://vgx.guru"
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-2 rounded-lg border border-white/30 bg-white/10 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-white/20"
           >
-            Learn more at vgx.guru
+            Enquire about the next batch
             <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" />
             </svg>
