@@ -238,7 +238,9 @@ export function AppShell({
               </div>
             </nav>
 
-            <VGXFooter />
+            <div className="border-t border-gray-200 px-4 py-3 dark:border-gray-800">
+              <VGXFooter />
+            </div>
           </motion.aside>
         )}
       </AnimatePresence>
