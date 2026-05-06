@@ -42,7 +42,7 @@ pnpm dev                  # http://localhost:5173
 pnpm test              # 120 tests
 
 # Frontend unit tests (Vitest, jsdom)
-cd web && pnpm test    # 22 tests
+cd web && pnpm test    # 102 tests
 
 # Feature matrix E2E (Playwright — requires both dev servers running)
 pnpm test:features
