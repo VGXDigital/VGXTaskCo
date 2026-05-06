@@ -1,6 +1,6 @@
 # VGXTaskCo
 
-**Version: 0.6.9**
+**Version: 0.7.0**
 
 The reference implementation for [VGX Global Consulting's AI-Powered Development with Claude masterclass](https://vgx.guru). Built live during the course to demonstrate AI-assisted full-stack development — every commit, prompt, and architectural decision is traceable to the build sequence in `vgxtaskco-build.md`.
 
@@ -57,6 +57,14 @@ For VGX VPS: see [VPS Setup](prompts/VPS-SETUP.md) + GitHub Actions workflow in 
 ---
 
 ## Changelog
+
+### 0.7.0 (2026-05-07)
+
+- Rate limiting disabled in dev/test (`NODE_ENV !== 'production'`) — prevents E2E suite from hitting limits during multi-user tests
+- Added flat `GET /activity` endpoint scoped to the authenticated user's projects — tests no longer depend on project-scoped URL
+- Fixed E2E test CSV URLs: `/export/project/:id` → `/projects/:id/export/tasks.csv`, `/export/tasks` → `/export/tasks.csv`
+- Fixed `proj-011` E2E test: removed `ownerId` from request body (schema is strict); verifies ownerId = caller instead
+- Version bump 0.6.9 → 0.7.0
 
 ### 0.6.7 (2026-05-07)
 

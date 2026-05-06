@@ -61,16 +61,20 @@ await app.register(sensible);
 // ── Rate limiting ──────────────────────────────────────────────────────────────
 // Global permissive default: 300 req/min per IP.
 // Auth routes apply stricter per-route limits (see src/routes/auth.ts).
-await app.register(rateLimit, {
-  global: true,
-  max: 300,
-  timeWindow: '1 minute',
-  errorResponseBuilder(_request, context) {
-    return {
-      error: `Too many requests. Please try again in ${context.after}.`,
-    };
-  },
-});
+// Rate limiting is disabled in development and test to avoid interference with
+// E2E tests that register many users quickly.
+if (env.NODE_ENV === 'production') {
+  await app.register(rateLimit, {
+    global: true,
+    max: 300,
+    timeWindow: '1 minute',
+    errorResponseBuilder(_request, context) {
+      return {
+        error: `Too many requests. Please try again in ${context.after}.`,
+      };
+    },
+  });
+}
 
 // ── Routes ─────────────────────────────────────────────────────────────────────
 await app.register(authRoutes, { prefix: '/auth' });

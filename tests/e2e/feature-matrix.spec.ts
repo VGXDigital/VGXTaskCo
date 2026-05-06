@@ -560,13 +560,15 @@ async function runApiTest(entry: MatrixEntry): Promise<void> {
     }
 
     case 'proj-011': {
+      // The schema uses .strict() — sending ownerId in the body returns 400.
+      // Verify that the created project always has ownerId = the authenticated caller.
       const res = await apiFetch('/projects', {
         method: 'POST',
-        body: JSON.stringify({ name: `${prefix}-proj`, ownerId: 'attacker-id' }),
+        body: JSON.stringify({ name: `${prefix}-proj` }),
       });
       expect(res.status).toBe(201);
       const body = (await res.json()) as AnyJson;
-      expect(body.data?.ownerId, `[${entry.id}] ownerId must be caller's id, not from body`).toBe(auth.userId);
+      expect(body.data?.ownerId, `[${entry.id}] ownerId must be caller's id`).toBe(auth.userId);
       break;
     }
 
@@ -1189,16 +1191,11 @@ async function runApiTest(entry: MatrixEntry): Promise<void> {
 
     case 'csv-004': {
       const proj = await createProject(`${prefix}-proj`);
-      const res = await apiFetch(`/export/project/${proj.id}`);
-      // Accept 200 or 404 if no tasks (still tests the header)
-      if (res.status === 200) {
-        const cd = res.headers.get('content-disposition');
-        expect(cd, `[${entry.id}] Content-Disposition must be present`).toBeTruthy();
-        expect(cd, `[${entry.id}] Content-Disposition must be attachment`).toContain('attachment');
-      } else {
-        // Route may 404 if no tasks — acceptable
-        expect([200, 404]).toContain(res.status);
-      }
+      const res = await apiFetch(`/projects/${proj.id}/export/tasks.csv`);
+      expect(res.status, `[${entry.id}] CSV export expected 200`).toBe(200);
+      const cd = res.headers.get('content-disposition');
+      expect(cd, `[${entry.id}] Content-Disposition must be present`).toBeTruthy();
+      expect(cd, `[${entry.id}] Content-Disposition must be attachment`).toContain('attachment');
       break;
     }
 
@@ -2110,7 +2107,7 @@ async function runCsvTest(entry: MatrixEntry): Promise<void> {
       const proj = await createProject(`${prefix}-proj`);
       await createTask(proj.id, `${prefix}-task-1`);
       await createTask(proj.id, `${prefix}-task-2`);
-      const res = await apiFetch(`/export/project/${proj.id}`);
+      const res = await apiFetch(`/projects/${proj.id}/export/tasks.csv`);
       expect(res.status, `[${entry.id}] CSV export expected 200`).toBe(200);
       const ct = res.headers.get('content-type');
       expect(ct, `[${entry.id}] Content-Type must be text/csv`).toContain('text/csv');
@@ -2128,7 +2125,7 @@ async function runCsvTest(entry: MatrixEntry): Promise<void> {
       const proj2 = await createProject(`${prefix}-proj2`);
       await createTask(proj1.id, `${prefix}-t1`);
       await createTask(proj2.id, `${prefix}-t2`);
-      const res = await apiFetch('/export/tasks');
+      const res = await apiFetch('/export/tasks.csv');
       expect(res.status, `[${entry.id}] Cross-project CSV export expected 200`).toBe(200);
       const csv = await res.text();
       const lines = csv.split('\n').filter((l) => l.trim());
@@ -2140,7 +2137,7 @@ async function runCsvTest(entry: MatrixEntry): Promise<void> {
       const proj = await createProject(`${prefix}-proj`);
       // Task with comma and quote in title
       await createTask(proj.id, `Title with, comma and "quotes"`);
-      const res = await apiFetch(`/export/project/${proj.id}`);
+      const res = await apiFetch(`/projects/${proj.id}/export/tasks.csv`);
       expect(res.status).toBe(200);
       const csv = await res.text();
       // A properly RFC 4180 escaped field with a comma must be wrapped in quotes
@@ -2155,7 +2152,7 @@ async function runCsvTest(entry: MatrixEntry): Promise<void> {
         method: 'PATCH',
         body: JSON.stringify({ archivedAt: new Date().toISOString() }),
       });
-      const res = await apiFetch(`/export/project/${proj.id}`);
+      const res = await apiFetch(`/projects/${proj.id}/export/tasks.csv`);
       expect(res.status).toBe(200);
       const csv = await res.text();
       const lines = csv.split('\n').filter((l) => l.trim() && !l.startsWith('id'));
@@ -2170,7 +2167,7 @@ async function runCsvTest(entry: MatrixEntry): Promise<void> {
       const otherProj = await createProject(`${prefix}-b-proj`, other.token);
       const uniqueTitle = `${prefix}-other-unique-export`;
       await createTask(otherProj.id, uniqueTitle, {}, other.token);
-      const res = await apiFetch('/export/tasks');
+      const res = await apiFetch('/export/tasks.csv');
       expect(res.status).toBe(200);
       const csv = await res.text();
       expect(csv, `[${entry.id}] Other user's tasks must not appear in export`).not.toContain(uniqueTitle);
