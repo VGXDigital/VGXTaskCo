@@ -15,7 +15,7 @@ FROM node:22-alpine AS builder
 WORKDIR /build
 COPY --from=deps /build/node_modules ./node_modules
 COPY . .
-RUN npm install -g pnpm && pnpm build
+RUN npm install -g pnpm && pnpm prisma generate && pnpm build
 
 # ---------- Stage 3: Runtime ----------
 FROM node:22-alpine AS runtime
@@ -29,7 +29,7 @@ WORKDIR /app
 RUN addgroup -S vgx && adduser -S vgx -G vgx && chown -R vgx:vgx /app
 
 COPY --from=builder --chown=vgx:vgx /build/dist ./dist
-COPY --from=deps --chown=vgx:vgx /build/node_modules ./node_modules
+COPY --from=builder --chown=vgx:vgx /build/node_modules ./node_modules
 COPY --chown=vgx:vgx package.json ./
 
 USER vgx
