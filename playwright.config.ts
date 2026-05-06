@@ -11,10 +11,18 @@ export default defineConfig({
   testDir: 'tests/e2e',
   timeout: 30000,
   workers: 1, // serial — shared DB
+  reporter: [
+    ['list'],                                              // live terminal output per test
+    ['html', { outputFolder: 'playwright-report', open: 'never' }],  // open with: npx playwright show-report
+    ['json', { outputFile: 'tests/feature-matrix-report.json' }],    // machine-readable
+  ],
   use: {
     baseURL: E2E_GUI_URL,
     headless: true,
     channel: 'msedge',
+    screenshot: 'only-on-failure',
+    video: 'retain-on-failure',
+    trace: 'retain-on-failure',
   },
   globalSetup: './tests/e2e/global-setup.ts',
   globalTeardown: './tests/e2e/global-teardown.ts',
