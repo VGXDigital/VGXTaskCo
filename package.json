@@ -1,6 +1,6 @@
 {
   "name": "vgx-taskco",
-  "version": "0.1.0",
+  "version": "0.5.1-beta",
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/index.ts",

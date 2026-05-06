@@ -3,6 +3,13 @@ dist/
 .env
 .env.local
 .env.prod
+.env.production
+.env.staging
+.env.*.local
+web/.env
+web/.env.local
+web/.env.production
+web/.env.*.local
 coverage/
 .DS_Store
 prisma/migrations/dev.db*
@@ -10,9 +17,11 @@ build-log.jsonl
 build-report.md
 .claude/settings.local.json
 *.tsbuildinfo
+*.pem
+*.key
 prompts/INSTRUCTOR-NOTES.md
 
-# Phase 12 — feature matrix test artifacts
+# Feature matrix test artifacts
 tests/e2e/.auth-state.json
 tests/feature-matrix-report.json
 tests/feature-matrix-report.md

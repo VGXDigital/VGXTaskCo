@@ -1,5 +1,8 @@
 // Copyright (c) 2026 VGX Global Consulting (OPC) Private Limited. All rights reserved.
 
+import { readFileSync } from 'fs';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
 import Fastify from 'fastify';
 import helmet from '@fastify/helmet';
 import cors from '@fastify/cors';
@@ -17,6 +20,9 @@ import webhooks from './routes/webhooks.js';
 import exportRoutes from './routes/export.js';
 import reminders from './routes/reminders.js';
 import search from './routes/search.js';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const { version: APP_VERSION } = JSON.parse(readFileSync(join(__dirname, '../package.json'), 'utf-8')) as { version: string };
 
 const app = Fastify({
   logger: {
@@ -65,7 +71,7 @@ await app.register(search);
 
 // ── Health check ───────────────────────────────────────────────────────────────
 app.get('/', async (_request, _reply) => {
-  return { data: { status: 'ok', service: 'vgx-taskco', version: '0.1.0' } };
+  return { data: { status: 'ok', service: 'vgx-taskco', version: APP_VERSION } };
 });
 
 // ── Boot ───────────────────────────────────────────────────────────────────────

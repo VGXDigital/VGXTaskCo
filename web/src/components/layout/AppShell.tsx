@@ -18,6 +18,7 @@ import {
   X,
 } from 'lucide-react'
 import { apiClient } from '../../lib/api-client'
+import { VGXFooter } from './VGXFooter'
 import { clearToken } from '../../lib/auth'
 import { useViews } from '../../hooks/useViews'
 import type { Project } from '../../types'
@@ -236,6 +237,8 @@ export function AppShell({
                 </ul>
               </div>
             </nav>
+
+            <VGXFooter />
           </motion.aside>
         )}
       </AnimatePresence>

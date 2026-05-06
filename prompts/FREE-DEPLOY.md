@@ -36,7 +36,7 @@ fly secrets set \
   DATABASE_URL="postgresql://neondb_owner:...@ep-...neon.tech/neondb?sslmode=require" \
   JWT_SECRET="your-secret-min-32-chars" \
   API_TOKEN_PEPPER="your-pepper-min-32-chars" \
-  SUPABASE_URL="https://kzobtamzsabsxkvekhnw.supabase.co" \
+  SUPABASE_URL="https://your-project.supabase.co" \
   SUPABASE_SERVICE_ROLE_KEY="your-service-role-key" \
   ALLOWED_FRONTEND_ORIGINS="https://vgxtaskco.vercel.app" \
   NODE_ENV="production"
@@ -118,7 +118,7 @@ Follow the prompts. Set root to `web/`, build command `pnpm build`, output `dist
 ### 2. Set environment variables in Vercel dashboard
 
 ```
-VITE_SUPABASE_URL=https://kzobtamzsabsxkvekhnw.supabase.co
+VITE_SUPABASE_URL=https://your-project.supabase.co
 VITE_SUPABASE_ANON_KEY=your-anon-key
 VITE_API_URL=https://vgxtaskco-api.fly.dev
 ```
