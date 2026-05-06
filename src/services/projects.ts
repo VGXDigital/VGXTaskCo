@@ -35,6 +35,7 @@ export async function listProjects(userId: string): Promise<Project[]> {
   return prisma.project.findMany({
     where: { ownerId: userId },
     orderBy: { createdAt: 'desc' },
+    include: { _count: { select: { tasks: true } } },
   });
 }
 
