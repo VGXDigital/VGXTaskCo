@@ -1,0 +1,20 @@
+node_modules/
+dist/
+.env
+.env.local
+.env.prod
+coverage/
+.DS_Store
+prisma/migrations/dev.db*
+build-log.jsonl
+build-report.md
+.claude/settings.local.json
+*.tsbuildinfo
+prompts/INSTRUCTOR-NOTES.md
+
+# Phase 12 — feature matrix test artifacts
+tests/e2e/.auth-state.json
+tests/feature-matrix-report.json
+tests/feature-matrix-report.md
+tests/autocorrect-log.jsonl
+tests/autocorrect-final-report.md

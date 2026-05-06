@@ -1,0 +1,14 @@
+# Copyright (c) 2026 VGX Global Consulting (OPC) Private Limited. All rights reserved.
+#
+# VGXTaskCo — Caddyfile snippet for tasks.vgx.digital
+#
+# NOTE: This file is NOT run inside Docker. It is a snippet to be added to
+# the VPS's main Caddyfile (or imported as a separate site config).
+#
+# The frontend nginx container serves on host port 4181.
+# nginx itself handles /api/* proxying to the backend container internally,
+# so Caddy only needs to reverse-proxy to the web container.
+
+tasks.vgx.digital {
+    reverse_proxy localhost:4181
+}

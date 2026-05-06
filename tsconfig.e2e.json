@@ -1,0 +1,10 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "rootDir": ".",
+    "outDir": "dist-e2e-check",
+    "noEmit": true,
+    "skipLibCheck": true
+  },
+  "include": ["tests/e2e/**/*", "playwright.config.ts"]
+}

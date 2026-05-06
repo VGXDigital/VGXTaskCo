@@ -1,0 +1,12 @@
+# Copyright (c) 2026 VGX Global Consulting (OPC) Private Limited. All rights reserved.
+node_modules
+dist
+.env
+.env.*
+!.env.example
+web/node_modules
+web/dist
+.git
+coverage
+build-log.jsonl
+build-report.md

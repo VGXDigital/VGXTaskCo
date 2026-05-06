@@ -1,0 +1,1352 @@
+[
+  {
+    "id": "auth-001",
+    "category": "Auth",
+    "feature": "Local register creates user and returns JWT",
+    "surface": "backend",
+    "verifyType": "api",
+    "criticality": "critical",
+    "endpoint": "POST /auth/register",
+    "description": "POST /auth/register with valid body { email, password (>=12 chars), name } returns 201 { data: { token, user: { id, email, name } } }. passwordHash must NOT be in response."
+  },
+  {
+    "id": "auth-002",
+    "category": "Auth",
+    "feature": "Local login returns JWT for valid credentials",
+    "surface": "backend",
+    "verifyType": "api",
+    "criticality": "critical",
+    "endpoint": "POST /auth/login",
+    "description": "POST /auth/login with correct email+password returns 200 { data: { token, user: { id, email, name } } }. Wrong credentials returns 401 { error: 'Invalid credentials' }."
+  },
+  {
+    "id": "auth-003",
+    "category": "Auth",
+    "feature": "GET /auth/me returns current user profile",
+    "surface": "backend",
+    "verifyType": "api",
+    "criticality": "critical",
+    "endpoint": "GET /auth/me",
+    "description": "GET /auth/me with valid Authorization: Bearer <token> returns 200 { data: { id, email, name } }. No token returns 401."
+  },
+  {
+    "id": "auth-004",
+    "category": "Auth",
+    "feature": "JWT expiry rejected after TTL",
+    "surface": "backend",
+    "verifyType": "api",
+    "criticality": "critical",
+    "endpoint": "GET /auth/me",
+    "description": "A JWT signed with exp in the past is rejected with 401. The middleware must verify expiry, not just signature."
+  },
+  {
+    "id": "auth-005",
+    "category": "Auth",
+    "feature": "Google SSO exchange creates new user (201)",
+    "surface": "backend",
+    "verifyType": "api",
+    "criticality": "important",
+    "endpoint": "POST /auth/sso/exchange",
+    "description": "POST /auth/sso/exchange with a valid Supabase Google access token for a new email returns 201 { data: { token, user } } and creates a user row with googleId set."
+  },
+  {
+    "id": "auth-006",
+    "category": "Auth",
+    "feature": "Google SSO exchange links provider to existing email",
+    "surface": "backend",
+    "verifyType": "api",
+    "criticality": "important",
+    "endpoint": "POST /auth/sso/exchange",
+    "description": "POST /auth/sso/exchange where a local user already exists with that email: returns 200 and updates the user row with googleId (no new row created)."
+  },
+  {
+    "id": "auth-007",
+    "category": "Auth",
+    "feature": "GitHub SSO exchange creates new user (201)",
+    "surface": "backend",
+    "verifyType": "api",
+    "criticality": "important",
+    "endpoint": "POST /auth/sso/exchange",
+    "description": "POST /auth/sso/exchange with a valid Supabase GitHub access token for a new email returns 201 { data: { token, user } } and creates a user row with githubId set."
+  },
+  {
+    "id": "auth-008",
+    "category": "Auth",
+    "feature": "GitHub SSO exchange links provider to existing email",
+    "surface": "backend",
+    "verifyType": "api",
+    "criticality": "important",
+    "endpoint": "POST /auth/sso/exchange",
+    "description": "POST /auth/sso/exchange for GitHub where a local user already exists with that email: returns 200 and updates the user row with githubId."
+  },
+  {
+    "id": "auth-009",
+    "category": "Auth",
+    "feature": "SSO exchange returns 503 when Supabase not configured",
+    "surface": "backend",
+    "verifyType": "api",
+    "criticality": "critical",
+    "endpoint": "POST /auth/sso/exchange",
+    "description": "When SUPABASE_URL / SUPABASE_SERVICE_KEY are not set, POST /auth/sso/exchange returns 503 { error: 'SSO not configured' }."
+  },
+  {
+    "id": "auth-010",
+    "category": "Auth",
+    "feature": "lastLoginAt updated on local login",
+    "surface": "backend",
+    "verifyType": "db",
+    "criticality": "important",
+    "endpoint": "POST /auth/login",
+    "description": "After POST /auth/login succeeds, the user row in DB has lastLoginAt set to a timestamp within the last 5 seconds."
+  },
+  {
+    "id": "auth-011",
+    "category": "Auth",
+    "feature": "Password minimum 12 characters enforced",
+    "surface": "backend",
+    "verifyType": "api",
+    "criticality": "critical",
+    "endpoint": "POST /auth/register",
+    "description": "POST /auth/register with password shorter than 12 chars returns 400 with a validation error message."
+  },
+  {
+    "id": "auth-012",
+    "category": "Auth",
+    "feature": "Duplicate email rejected on register",
+    "surface": "backend",
+    "verifyType": "api",
+    "criticality": "critical",
+    "endpoint": "POST /auth/register",
+    "description": "POST /auth/register with an already-registered email returns 409 { error: 'Email already in use' }."
+  },
+  {
+    "id": "auth-013",
+    "category": "Auth",
+    "feature": "Audit event recorded on successful login",
+    "surface": "backend",
+    "verifyType": "audit",
+    "criticality": "important",
+    "endpoint": "POST /auth/login",
+    "description": "After a successful login, AuditEvent row with eventType='auth.login.success' exists in DB for that userId."
+  },
+  {
+    "id": "proj-001",
+    "category": "Projects CRUD + ownership",
+    "feature": "Create project returns 201 with id",
+    "surface": "backend",
+    "verifyType": "api",
+    "criticality": "critical",
+    "endpoint": "POST /projects",
+    "description": "POST /projects with { name, description?, color? } returns 201 { data: { id, name, color, ownerId, createdAt } }. ownerId must equal the authenticated user's id."
+  },
+  {
+    "id": "proj-002",
+    "category": "Projects CRUD + ownership",
+    "feature": "List projects returns only caller's projects",
+    "surface": "backend",
+    "verifyType": "api",
+    "criticality": "critical",
+    "endpoint": "GET /projects",
+    "description": "GET /projects returns 200 { data: [...] } containing only projects owned by the authenticated user. Projects owned by other users must not appear."
+  },
+  {
+    "id": "proj-003",
+    "category": "Projects CRUD + ownership",
+    "feature": "Get project by id returns 200",
+    "surface": "backend",
+    "verifyType": "api",
+    "criticality": "critical",
+    "endpoint": "GET /projects/:id",
+    "description": "GET /projects/:id for a project owned by the caller returns 200 { data: { id, name, color, ownerId, ... } }."
+  },
+  {
+    "id": "proj-004",
+    "category": "Projects CRUD + ownership",
+    "feature": "Update project returns 200 with updated fields",
+    "surface": "backend",
+    "verifyType": "api",
+    "criticality": "critical",
+    "endpoint": "PATCH /projects/:id",
+    "description": "PATCH /projects/:id with { name: 'New Name' } returns 200 { data: { id, name: 'New Name', ... } }."
+  },
+  {
+    "id": "proj-005",
+    "category": "Projects CRUD + ownership",
+    "feature": "Delete project returns 200",
+    "surface": "backend",
+    "verifyType": "api",
+    "criticality": "critical",
+    "endpoint": "DELETE /projects/:id",
+    "description": "DELETE /projects/:id for own project returns 200 { data: { deleted: true } }."
+  },
+  {
+    "id": "proj-006",
+    "category": "Projects CRUD + ownership",
+    "feature": "Cross-user GET returns 404",
+    "surface": "backend",
+    "verifyType": "api",
+    "criticality": "critical",
+    "endpoint": "GET /projects/:id",
+    "description": "GET /projects/:id for a project owned by user B, when authenticated as user A, returns 404."
+  },
+  {
+    "id": "proj-007",
+    "category": "Projects CRUD + ownership",
+    "feature": "Cross-user PATCH returns 404",
+    "surface": "backend",
+    "verifyType": "api",
+    "criticality": "critical",
+    "endpoint": "PATCH /projects/:id",
+    "description": "PATCH /projects/:id for a project owned by user B, when authenticated as user A, returns 404."
+  },
+  {
+    "id": "proj-008",
+    "category": "Projects CRUD + ownership",
+    "feature": "Cross-user DELETE returns 404",
+    "surface": "backend",
+    "verifyType": "api",
+    "criticality": "critical",
+    "endpoint": "DELETE /projects/:id",
+    "description": "DELETE /projects/:id for a project owned by user B, when authenticated as user A, returns 404."
+  },
+  {
+    "id": "proj-009",
+    "category": "Projects CRUD + ownership",
+    "feature": "Cascade delete removes all tasks",
+    "surface": "backend",
+    "verifyType": "db",
+    "criticality": "critical",
+    "endpoint": "DELETE /projects/:id",
+    "description": "After DELETE /projects/:id, all Task rows with projectId matching that project are gone from the DB."
+  },
+  {
+    "id": "proj-010",
+    "category": "Projects CRUD + ownership",
+    "feature": "Default color applied when color omitted",
+    "surface": "backend",
+    "verifyType": "api",
+    "criticality": "important",
+    "endpoint": "POST /projects",
+    "description": "POST /projects with no color field returns 201 with color set to the default value '#3b82f6'."
+  },
+  {
+    "id": "proj-011",
+    "category": "Projects CRUD + ownership",
+    "feature": "ownerId from body is ignored",
+    "surface": "backend",
+    "verifyType": "api",
+    "criticality": "critical",
+    "endpoint": "POST /projects",
+    "description": "POST /projects with ownerId: 'attacker-id' in the body still sets ownerId to the authenticated user's id."
+  },
+  {
+    "id": "task-001",
+    "category": "Tasks CRUD + ownership",
+    "feature": "Create task under own project returns 201",
+    "surface": "backend",
+    "verifyType": "api",
+    "criticality": "critical",
+    "endpoint": "POST /projects/:projectId/tasks",
+    "description": "POST /projects/:projectId/tasks with { title, description?, status?, priority?, dueDate? } returns 201 { data: { id, title, status, priority, projectId, ... } }."
+  },
+  {
+    "id": "task-002",
+    "category": "Tasks CRUD + ownership",
+    "feature": "List tasks returns only tasks in own project",
+    "surface": "backend",
+    "verifyType": "api",
+    "criticality": "critical",
+    "endpoint": "GET /projects/:projectId/tasks",
+    "description": "GET /projects/:projectId/tasks returns 200 { data: [...] } with tasks belonging to that project. Cross-project tasks must not appear."
+  },
+  {
+    "id": "task-003",
+    "category": "Tasks CRUD + ownership",
+    "feature": "Filter by status",
+    "surface": "backend",
+    "verifyType": "api",
+    "criticality": "critical",
+    "endpoint": "GET /projects/:projectId/tasks",
+    "description": "GET /projects/:projectId/tasks?status=TODO returns only tasks with status=TODO. Tasks with status=DONE must not appear."
+  },
+  {
+    "id": "task-004",
+    "category": "Tasks CRUD + ownership",
+    "feature": "Filter by priority",
+    "surface": "backend",
+    "verifyType": "api",
+    "criticality": "important",
+    "endpoint": "GET /projects/:projectId/tasks",
+    "description": "GET /projects/:projectId/tasks?priority=HIGH returns only tasks with priority=HIGH."
+  },
+  {
+    "id": "task-005",
+    "category": "Tasks CRUD + ownership",
+    "feature": "Filter by dueWithin=today",
+    "surface": "backend",
+    "verifyType": "api",
+    "criticality": "important",
+    "endpoint": "GET /projects/:projectId/tasks",
+    "description": "GET /projects/:projectId/tasks?dueWithin=today returns only tasks with dueDate on today's date."
+  },
+  {
+    "id": "task-006",
+    "category": "Tasks CRUD + ownership",
+    "feature": "Filter by search query",
+    "surface": "backend",
+    "verifyType": "api",
+    "criticality": "important",
+    "endpoint": "GET /projects/:projectId/tasks",
+    "description": "GET /projects/:projectId/tasks?search=foo returns tasks whose title or description contains 'foo' (ILIKE)."
+  },
+  {
+    "id": "task-007",
+    "category": "Tasks CRUD + ownership",
+    "feature": "Filter includeArchived=false excludes archived tasks",
+    "surface": "backend",
+    "verifyType": "api",
+    "criticality": "critical",
+    "endpoint": "GET /projects/:projectId/tasks",
+    "description": "By default (includeArchived omitted or false), tasks with archivedAt != null must NOT appear in the list."
+  },
+  {
+    "id": "task-008",
+    "category": "Tasks CRUD + ownership",
+    "feature": "Filter includeArchived=true includes archived tasks",
+    "surface": "backend",
+    "verifyType": "api",
+    "criticality": "important",
+    "endpoint": "GET /projects/:projectId/tasks",
+    "description": "GET /projects/:projectId/tasks?includeArchived=true includes tasks with archivedAt set."
+  },
+  {
+    "id": "task-009",
+    "category": "Tasks CRUD + ownership",
+    "feature": "Update task returns 200 with updated fields",
+    "surface": "backend",
+    "verifyType": "api",
+    "criticality": "critical",
+    "endpoint": "PATCH /tasks/:id",
+    "description": "PATCH /tasks/:id with { title: 'Updated' } returns 200 { data: { id, title: 'Updated', ... } }."
+  },
+  {
+    "id": "task-010",
+    "category": "Tasks CRUD + ownership",
+    "feature": "Delete task returns 200",
+    "surface": "backend",
+    "verifyType": "api",
+    "criticality": "critical",
+    "endpoint": "DELETE /tasks/:id",
+    "description": "DELETE /tasks/:id for a task in own project returns 200 { data: { deleted: true } }."
+  },
+  {
+    "id": "task-011",
+    "category": "Tasks CRUD + ownership",
+    "feature": "Cross-project task access returns 404",
+    "surface": "backend",
+    "verifyType": "api",
+    "criticality": "critical",
+    "endpoint": "PATCH /tasks/:id",
+    "description": "PATCH /tasks/:id for a task in another user's project returns 404."
+  },
+  {
+    "id": "task-012",
+    "category": "Tasks CRUD + ownership",
+    "feature": "Invalid status enum rejected with 400",
+    "surface": "backend",
+    "verifyType": "api",
+    "criticality": "critical",
+    "endpoint": "POST /projects/:projectId/tasks",
+    "description": "POST /projects/:projectId/tasks with status: 'INVALID' returns 400 with a validation error."
+  },
+  {
+    "id": "task-013",
+    "category": "Tasks CRUD + ownership",
+    "feature": "Setting dueDate to null clears it",
+    "surface": "backend",
+    "verifyType": "api",
+    "criticality": "important",
+    "endpoint": "PATCH /tasks/:id",
+    "description": "PATCH /tasks/:id with { dueDate: null } returns 200 and the task's dueDate is null in the response."
+  },
+  {
+    "id": "task-014",
+    "category": "Tasks CRUD + ownership",
+    "feature": "archivedAt set and unset via PATCH",
+    "surface": "backend",
+    "verifyType": "api",
+    "criticality": "important",
+    "endpoint": "PATCH /tasks/:id",
+    "description": "PATCH /tasks/:id with { archivedAt: <ISO date> } sets archivedAt. PATCH with { archivedAt: null } clears it."
+  },
+  {
+    "id": "bulk-001",
+    "category": "Bulk task ops",
+    "feature": "Bulk status sets all owned tasks",
+    "surface": "backend",
+    "verifyType": "api",
+    "criticality": "critical",
+    "endpoint": "POST /tasks/bulk/status",
+    "description": "POST /tasks/bulk/status with { ids: [...], status: 'DONE' } returns 200 { data: { updated: N } } and all tasks have status=DONE in DB."
+  },
+  {
+    "id": "bulk-002",
+    "category": "Bulk task ops",
+    "feature": "Bulk status returns 403 with unauthorizedIds",
+    "surface": "backend",
+    "verifyType": "api",
+    "criticality": "critical",
+    "endpoint": "POST /tasks/bulk/status",
+    "description": "POST /tasks/bulk/status including a task owned by another user returns 403 { error: 'Unauthorized', unauthorizedIds: [...] }."
+  },
+  {
+    "id": "bulk-003",
+    "category": "Bulk task ops",
+    "feature": "Bulk move moves tasks to target project",
+    "surface": "backend",
+    "verifyType": "api",
+    "criticality": "critical",
+    "endpoint": "POST /tasks/bulk/move",
+    "description": "POST /tasks/bulk/move with { ids: [...], projectId: <targetId> } returns 200 { data: { updated: N } } and tasks now have projectId=targetId."
+  },
+  {
+    "id": "bulk-004",
+    "category": "Bulk task ops",
+    "feature": "Bulk move returns 403 with unauthorizedIds on partial ownership",
+    "surface": "backend",
+    "verifyType": "api",
+    "criticality": "critical",
+    "endpoint": "POST /tasks/bulk/move",
+    "description": "POST /tasks/bulk/move including tasks not owned by the caller returns 403 { error: 'Unauthorized', unauthorizedIds: [...] }."
+  },
+  {
+    "id": "bulk-005",
+    "category": "Bulk task ops",
+    "feature": "Bulk archive sets archivedAt on all owned tasks",
+    "surface": "backend",
+    "verifyType": "api",
+    "criticality": "critical",
+    "endpoint": "POST /tasks/bulk/archive",
+    "description": "POST /tasks/bulk/archive with { ids: [...] } returns 200 { data: { updated: N } } and all tasks have archivedAt set in DB."
+  },
+  {
+    "id": "bulk-006",
+    "category": "Bulk task ops",
+    "feature": "Bulk unarchive clears archivedAt on all owned tasks",
+    "surface": "backend",
+    "verifyType": "api",
+    "criticality": "critical",
+    "endpoint": "POST /tasks/bulk/unarchive",
+    "description": "POST /tasks/bulk/unarchive with { ids: [...] } returns 200 { data: { updated: N } } and all tasks have archivedAt=null."
+  },
+  {
+    "id": "bulk-007",
+    "category": "Bulk task ops",
+    "feature": "Bulk delete removes tasks",
+    "surface": "backend",
+    "verifyType": "api",
+    "criticality": "critical",
+    "endpoint": "POST /tasks/bulk/delete",
+    "description": "POST /tasks/bulk/delete with { ids: [...] } returns 200 { data: { deleted: N } } and task rows are gone from DB."
+  },
+  {
+    "id": "bulk-008",
+    "category": "Bulk task ops",
+    "feature": "Bulk ops reject >500 ids",
+    "surface": "backend",
+    "verifyType": "api",
+    "criticality": "critical",
+    "endpoint": "POST /tasks/bulk/status",
+    "description": "POST /tasks/bulk/status with more than 500 ids returns 400 with a validation error."
+  },
+  {
+    "id": "bulk-009",
+    "category": "Bulk task ops",
+    "feature": "Bulk archive returns 403 on partial ownership",
+    "surface": "backend",
+    "verifyType": "api",
+    "criticality": "critical",
+    "endpoint": "POST /tasks/bulk/archive",
+    "description": "POST /tasks/bulk/archive including tasks from another user returns 403 { error: 'Unauthorized', unauthorizedIds: [...] }."
+  },
+  {
+    "id": "bulk-010",
+    "category": "Bulk task ops",
+    "feature": "Bulk delete returns 403 on partial ownership",
+    "surface": "backend",
+    "verifyType": "api",
+    "criticality": "critical",
+    "endpoint": "POST /tasks/bulk/delete",
+    "description": "POST /tasks/bulk/delete including tasks from another user returns 403 { error: 'Unauthorized', unauthorizedIds: [...] }."
+  },
+  {
+    "id": "tag-001",
+    "category": "Tags",
+    "feature": "Create tag returns 201",
+    "surface": "backend",
+    "verifyType": "api",
+    "criticality": "critical",
+    "endpoint": "POST /tags",
+    "description": "POST /tags with { value: 'priority:high' } returns 201 { data: { id, value, ownerId } }."
+  },
+  {
+    "id": "tag-002",
+    "category": "Tags",
+    "feature": "List tags returns only caller's tags",
+    "surface": "backend",
+    "verifyType": "api",
+    "criticality": "critical",
+    "endpoint": "GET /tags",
+    "description": "GET /tags returns 200 { data: [...] } with only tags owned by the authenticated user."
+  },
+  {
+    "id": "tag-003",
+    "category": "Tags",
+    "feature": "Attach tag to task",
+    "surface": "backend",
+    "verifyType": "api",
+    "criticality": "critical",
+    "endpoint": "POST /tasks/:taskId/tags/:tagId",
+    "description": "POST /tasks/:taskId/tags/:tagId attaches the tag to the task and returns 200 { data: { attached: true } }."
+  },
+  {
+    "id": "tag-004",
+    "category": "Tags",
+    "feature": "Detach tag from task",
+    "surface": "backend",
+    "verifyType": "api",
+    "criticality": "critical",
+    "endpoint": "DELETE /tasks/:taskId/tags/:tagId",
+    "description": "DELETE /tasks/:taskId/tags/:tagId detaches the tag and returns 200 { data: { detached: true } }."
+  },
+  {
+    "id": "tag-005",
+    "category": "Tags",
+    "feature": "Cross-user tag attach blocked",
+    "surface": "backend",
+    "verifyType": "api",
+    "criticality": "critical",
+    "endpoint": "POST /tasks/:taskId/tags/:tagId",
+    "description": "POST /tasks/:taskId/tags/:tagId where the tag belongs to user B and the request is from user A returns 403 or 404."
+  },
+  {
+    "id": "tag-006",
+    "category": "Tags",
+    "feature": "Tag value unique per user",
+    "surface": "backend",
+    "verifyType": "api",
+    "criticality": "critical",
+    "endpoint": "POST /tags",
+    "description": "POST /tags with a value already owned by the same user returns 409. Same value for a different user is allowed."
+  },
+  {
+    "id": "comment-001",
+    "category": "Comments",
+    "feature": "Create comment on task returns 201",
+    "surface": "backend",
+    "verifyType": "api",
+    "criticality": "critical",
+    "endpoint": "POST /tasks/:taskId/comments",
+    "description": "POST /tasks/:taskId/comments with { body: 'Hello' } returns 201 { data: { id, body, authorId, taskId, createdAt } }."
+  },
+  {
+    "id": "comment-002",
+    "category": "Comments",
+    "feature": "List comments returns chronological order",
+    "surface": "backend",
+    "verifyType": "api",
+    "criticality": "critical",
+    "endpoint": "GET /tasks/:taskId/comments",
+    "description": "GET /tasks/:taskId/comments returns 200 { data: [...] } with comments sorted by createdAt ascending."
+  },
+  {
+    "id": "comment-003",
+    "category": "Comments",
+    "feature": "Author can edit own comment",
+    "surface": "backend",
+    "verifyType": "api",
+    "criticality": "critical",
+    "endpoint": "PATCH /comments/:id",
+    "description": "PATCH /comments/:id by the comment author returns 200 { data: { id, body: 'Updated', ... } }."
+  },
+  {
+    "id": "comment-004",
+    "category": "Comments",
+    "feature": "Author can delete own comment",
+    "surface": "backend",
+    "verifyType": "api",
+    "criticality": "critical",
+    "endpoint": "DELETE /comments/:id",
+    "description": "DELETE /comments/:id by the comment author returns 200 { data: { deleted: true } }."
+  },
+  {
+    "id": "comment-005",
+    "category": "Comments",
+    "feature": "Project owner can delete any comment in their project",
+    "surface": "backend",
+    "verifyType": "api",
+    "criticality": "critical",
+    "endpoint": "DELETE /comments/:id",
+    "description": "DELETE /comments/:id by the project owner (not the comment author) returns 200 { data: { deleted: true } }."
+  },
+  {
+    "id": "comment-006",
+    "category": "Comments",
+    "feature": "Non-author cannot edit comment",
+    "surface": "backend",
+    "verifyType": "api",
+    "criticality": "critical",
+    "endpoint": "PATCH /comments/:id",
+    "description": "PATCH /comments/:id by a user who is not the comment author returns 403."
+  },
+  {
+    "id": "comment-007",
+    "category": "Comments",
+    "feature": "Project owner cannot edit another user's comment",
+    "surface": "backend",
+    "verifyType": "api",
+    "criticality": "critical",
+    "endpoint": "PATCH /comments/:id",
+    "description": "PATCH /comments/:id by the project owner when they are not the comment author returns 403."
+  },
+  {
+    "id": "activity-001",
+    "category": "Activity log",
+    "feature": "project.created recorded in activity log",
+    "surface": "backend",
+    "verifyType": "db",
+    "criticality": "important",
+    "endpoint": "POST /projects",
+    "description": "After POST /projects, an Activity row with action='project.created' and subjectType='project' exists in DB."
+  },
+  {
+    "id": "activity-002",
+    "category": "Activity log",
+    "feature": "project.updated recorded in activity log",
+    "surface": "backend",
+    "verifyType": "db",
+    "criticality": "important",
+    "endpoint": "PATCH /projects/:id",
+    "description": "After PATCH /projects/:id, an Activity row with action='project.updated' exists in DB for that projectId."
+  },
+  {
+    "id": "activity-003",
+    "category": "Activity log",
+    "feature": "task.created recorded in activity log",
+    "surface": "backend",
+    "verifyType": "db",
+    "criticality": "important",
+    "endpoint": "POST /projects/:projectId/tasks",
+    "description": "After POST /projects/:projectId/tasks, an Activity row with action='task.created' exists in DB."
+  },
+  {
+    "id": "activity-004",
+    "category": "Activity log",
+    "feature": "task.updated recorded in activity log",
+    "surface": "backend",
+    "verifyType": "db",
+    "criticality": "important",
+    "endpoint": "PATCH /tasks/:id",
+    "description": "After PATCH /tasks/:id, an Activity row with action='task.updated' exists in DB."
+  },
+  {
+    "id": "activity-005",
+    "category": "Activity log",
+    "feature": "task.status.changed recorded with from/to metadata",
+    "surface": "backend",
+    "verifyType": "db",
+    "criticality": "important",
+    "endpoint": "PATCH /tasks/:id",
+    "description": "After PATCH /tasks/:id with a status change, an Activity row with action='task.status.changed' exists with metadata containing { from, to }."
+  },
+  {
+    "id": "activity-006",
+    "category": "Activity log",
+    "feature": "comment.created recorded in activity log",
+    "surface": "backend",
+    "verifyType": "db",
+    "criticality": "important",
+    "endpoint": "POST /tasks/:taskId/comments",
+    "description": "After POST /tasks/:taskId/comments, an Activity row with action='comment.created' exists in DB."
+  },
+  {
+    "id": "activity-007",
+    "category": "Activity log",
+    "feature": "Activity list supports pagination cursor",
+    "surface": "backend",
+    "verifyType": "api",
+    "criticality": "important",
+    "endpoint": "GET /activity",
+    "description": "GET /activity?limit=2 returns 200 { data: [...], nextCursor: <id> }. GET /activity?cursor=<id>&limit=2 returns the next page."
+  },
+  {
+    "id": "activity-008",
+    "category": "Activity log",
+    "feature": "Activity filter by subjectId and subjectType",
+    "surface": "backend",
+    "verifyType": "api",
+    "criticality": "important",
+    "endpoint": "GET /activity",
+    "description": "GET /activity?subjectId=<taskId>&subjectType=task returns only activity rows for that task."
+  },
+  {
+    "id": "views-001",
+    "category": "Saved views",
+    "feature": "3 default views seeded on local register",
+    "surface": "backend",
+    "verifyType": "db",
+    "criticality": "critical",
+    "endpoint": "POST /auth/register",
+    "description": "After POST /auth/register, 3 SavedView rows exist for the new user's id in the DB."
+  },
+  {
+    "id": "views-002",
+    "category": "Saved views",
+    "feature": "3 default views seeded on SSO new-user",
+    "surface": "backend",
+    "verifyType": "db",
+    "criticality": "critical",
+    "endpoint": "POST /auth/sso/exchange",
+    "description": "After POST /auth/sso/exchange for a brand-new user, 3 SavedView rows exist for the new user."
+  },
+  {
+    "id": "views-003",
+    "category": "Saved views",
+    "feature": "Create saved view returns 201",
+    "surface": "backend",
+    "verifyType": "api",
+    "criticality": "critical",
+    "endpoint": "POST /views",
+    "description": "POST /views with { name, scope: 'user', filter: { status: 'TODO' } } returns 201 { data: { id, name, scope, filter, ownerId } }."
+  },
+  {
+    "id": "views-004",
+    "category": "Saved views",
+    "feature": "List saved views returns only caller's views",
+    "surface": "backend",
+    "verifyType": "api",
+    "criticality": "critical",
+    "endpoint": "GET /views",
+    "description": "GET /views returns 200 { data: [...] } with only views owned by the caller."
+  },
+  {
+    "id": "views-005",
+    "category": "Saved views",
+    "feature": "Update saved view returns 200",
+    "surface": "backend",
+    "verifyType": "api",
+    "criticality": "important",
+    "endpoint": "PATCH /views/:id",
+    "description": "PATCH /views/:id with { name: 'Updated' } returns 200 { data: { id, name: 'Updated', ... } }."
+  },
+  {
+    "id": "views-006",
+    "category": "Saved views",
+    "feature": "Delete saved view returns 200",
+    "surface": "backend",
+    "verifyType": "api",
+    "criticality": "important",
+    "endpoint": "DELETE /views/:id",
+    "description": "DELETE /views/:id returns 200 { data: { deleted: true } }."
+  },
+  {
+    "id": "views-007",
+    "category": "Saved views",
+    "feature": "scope=project view scoped to projectId",
+    "surface": "backend",
+    "verifyType": "api",
+    "criticality": "important",
+    "endpoint": "POST /views",
+    "description": "POST /views with { scope: 'project', projectId: <id>, ... } creates a view linked to that project."
+  },
+  {
+    "id": "views-008",
+    "category": "Saved views",
+    "feature": "dueWithin enum exhaustive — all 4 values accepted",
+    "surface": "backend",
+    "verifyType": "api",
+    "criticality": "important",
+    "endpoint": "POST /views",
+    "description": "POST /views with filter.dueWithin set to each of: today, thisWeek, overdue, doneInLast7Days returns 201. Any other value returns 400."
+  },
+  {
+    "id": "csv-001",
+    "category": "CSV export",
+    "feature": "Project-scoped CSV export returns correct columns",
+    "surface": "backend",
+    "verifyType": "csv",
+    "criticality": "critical",
+    "endpoint": "GET /export/project/:id",
+    "description": "GET /export/project/:id returns 200 with Content-Type: text/csv and columns: id,title,status,priority,dueDate,archivedAt,projectId,createdAt."
+  },
+  {
+    "id": "csv-002",
+    "category": "CSV export",
+    "feature": "Cross-project CSV export returns all own tasks",
+    "surface": "backend",
+    "verifyType": "csv",
+    "criticality": "critical",
+    "endpoint": "GET /export/tasks",
+    "description": "GET /export/tasks returns all tasks from all projects owned by the caller in CSV format."
+  },
+  {
+    "id": "csv-003",
+    "category": "CSV export",
+    "feature": "RFC 4180 escaping for commas and quotes in values",
+    "surface": "backend",
+    "verifyType": "csv",
+    "criticality": "critical",
+    "endpoint": "GET /export/project/:id",
+    "description": "A task with title containing a comma or double-quote is correctly escaped in CSV (quoted field, internal quotes doubled)."
+  },
+  {
+    "id": "csv-004",
+    "category": "CSV export",
+    "feature": "Content-Disposition header present with filename",
+    "surface": "backend",
+    "verifyType": "api",
+    "criticality": "important",
+    "endpoint": "GET /export/project/:id",
+    "description": "GET /export/project/:id response includes Content-Disposition: attachment; filename=... header."
+  },
+  {
+    "id": "csv-005",
+    "category": "CSV export",
+    "feature": "Archived tasks excluded by default",
+    "surface": "backend",
+    "verifyType": "csv",
+    "criticality": "critical",
+    "endpoint": "GET /export/project/:id",
+    "description": "GET /export/project/:id does NOT include tasks with archivedAt set unless includeArchived=true is passed."
+  },
+  {
+    "id": "csv-006",
+    "category": "CSV export",
+    "feature": "Cross-project export excludes other users' tasks",
+    "surface": "backend",
+    "verifyType": "csv",
+    "criticality": "critical",
+    "endpoint": "GET /export/tasks",
+    "description": "GET /export/tasks only returns tasks from projects owned by the authenticated user. Other users' tasks must not appear."
+  },
+  {
+    "id": "apitoken-001",
+    "category": "API tokens",
+    "feature": "Create API token returns raw token once",
+    "surface": "backend",
+    "verifyType": "api",
+    "criticality": "critical",
+    "endpoint": "POST /api-tokens",
+    "description": "POST /api-tokens with { name, scope?, expiresAt? } returns 201 { data: { id, name, prefix, rawToken, ... } }. rawToken is the full token."
+  },
+  {
+    "id": "apitoken-002",
+    "category": "API tokens",
+    "feature": "List API tokens does not expose raw token",
+    "surface": "backend",
+    "verifyType": "api",
+    "criticality": "critical",
+    "endpoint": "GET /api-tokens",
+    "description": "GET /api-tokens returns 200 { data: [...] } where each entry has NO tokenHash and NO raw token field."
+  },
+  {
+    "id": "apitoken-003",
+    "category": "API tokens",
+    "feature": "Revoke API token returns 200",
+    "surface": "backend",
+    "verifyType": "api",
+    "criticality": "critical",
+    "endpoint": "DELETE /api-tokens/:id",
+    "description": "DELETE /api-tokens/:id returns 200 { data: { revoked: true } } and sets revokedAt in DB."
+  },
+  {
+    "id": "apitoken-004",
+    "category": "API tokens",
+    "feature": "Expired token rejected with 401",
+    "surface": "backend",
+    "verifyType": "api",
+    "criticality": "critical",
+    "endpoint": "GET /auth/me",
+    "description": "An API token with expiresAt in the past, used as Bearer token, returns 401."
+  },
+  {
+    "id": "apitoken-005",
+    "category": "API tokens",
+    "feature": "Revoked token rejected with 401",
+    "surface": "backend",
+    "verifyType": "api",
+    "criticality": "critical",
+    "endpoint": "GET /auth/me",
+    "description": "An API token that has been revoked (revokedAt set), used as Bearer token, returns 401."
+  },
+  {
+    "id": "apitoken-006",
+    "category": "API tokens",
+    "feature": "API token hashed with HMAC-SHA256 + pepper, not bcrypt",
+    "surface": "backend",
+    "verifyType": "db",
+    "criticality": "critical",
+    "endpoint": "POST /api-tokens",
+    "description": "After POST /api-tokens, the tokenHash in the ApiToken row starts with 'hmac:' or is a hex string, NOT a bcrypt hash (i.e., does NOT start with '$2b$')."
+  },
+  {
+    "id": "apitoken-007",
+    "category": "API tokens",
+    "feature": "Service-scope token accepted on service endpoints",
+    "surface": "backend",
+    "verifyType": "api",
+    "criticality": "critical",
+    "endpoint": "GET /reminders/due-today",
+    "description": "A token with scope='service' can access GET /reminders/due-today and returns 200."
+  },
+  {
+    "id": "apitoken-008",
+    "category": "API tokens",
+    "feature": "User-scope token rejected on service-only endpoints",
+    "surface": "backend",
+    "verifyType": "api",
+    "criticality": "critical",
+    "endpoint": "GET /reminders/due-today",
+    "description": "A token with scope='user' (the default) gets 403 on GET /reminders/due-today."
+  },
+  {
+    "id": "audit-001",
+    "category": "Audit log",
+    "feature": "auth.register event recorded",
+    "surface": "backend",
+    "verifyType": "audit",
+    "criticality": "important",
+    "endpoint": "POST /auth/register",
+    "description": "After POST /auth/register, AuditEvent with eventType='auth.register' exists in DB."
+  },
+  {
+    "id": "audit-002",
+    "category": "Audit log",
+    "feature": "auth.login.success event recorded",
+    "surface": "backend",
+    "verifyType": "audit",
+    "criticality": "important",
+    "endpoint": "POST /auth/login",
+    "description": "After successful POST /auth/login, AuditEvent with eventType='auth.login.success' and actorId set exists in DB."
+  },
+  {
+    "id": "audit-003",
+    "category": "Audit log",
+    "feature": "auth.login.failure event recorded with no actorId",
+    "surface": "backend",
+    "verifyType": "audit",
+    "criticality": "important",
+    "endpoint": "POST /auth/login",
+    "description": "After a failed POST /auth/login, AuditEvent with eventType='auth.login.failure' exists in DB with actorId null."
+  },
+  {
+    "id": "audit-004",
+    "category": "Audit log",
+    "feature": "api-token.created event recorded",
+    "surface": "backend",
+    "verifyType": "audit",
+    "criticality": "important",
+    "endpoint": "POST /api-tokens",
+    "description": "After POST /api-tokens, AuditEvent with eventType='api-token.created' exists in DB."
+  },
+  {
+    "id": "audit-005",
+    "category": "Audit log",
+    "feature": "api-token.revoked event recorded",
+    "surface": "backend",
+    "verifyType": "audit",
+    "criticality": "important",
+    "endpoint": "DELETE /api-tokens/:id",
+    "description": "After DELETE /api-tokens/:id, AuditEvent with eventType='api-token.revoked' exists in DB."
+  },
+  {
+    "id": "audit-006",
+    "category": "Audit log",
+    "feature": "project.created audit event recorded",
+    "surface": "backend",
+    "verifyType": "audit",
+    "criticality": "important",
+    "endpoint": "POST /projects",
+    "description": "After POST /projects, AuditEvent with eventType='project.created' exists in DB."
+  },
+  {
+    "id": "audit-007",
+    "category": "Audit log",
+    "feature": "project.deleted audit event recorded",
+    "surface": "backend",
+    "verifyType": "audit",
+    "criticality": "important",
+    "endpoint": "DELETE /projects/:id",
+    "description": "After DELETE /projects/:id, AuditEvent with eventType='project.deleted' exists in DB."
+  },
+  {
+    "id": "audit-008",
+    "category": "Audit log",
+    "feature": "webhook.created audit event recorded",
+    "surface": "backend",
+    "verifyType": "audit",
+    "criticality": "important",
+    "endpoint": "POST /webhooks",
+    "description": "After POST /webhooks, AuditEvent with eventType='webhook.created' exists in DB."
+  },
+  {
+    "id": "audit-009",
+    "category": "Audit log",
+    "feature": "auth.access.denied audit event recorded on 403",
+    "surface": "backend",
+    "verifyType": "audit",
+    "criticality": "important",
+    "endpoint": "POST /tasks/bulk/status",
+    "description": "After a 403 bulk op, AuditEvent with eventType='auth.access.denied' exists in DB."
+  },
+  {
+    "id": "audit-010",
+    "category": "Audit log",
+    "feature": "task.bulk.status audit event recorded",
+    "surface": "backend",
+    "verifyType": "audit",
+    "criticality": "important",
+    "endpoint": "POST /tasks/bulk/status",
+    "description": "After a successful POST /tasks/bulk/status, AuditEvent with eventType='task.bulk.status' exists in DB."
+  },
+  {
+    "id": "audit-011",
+    "category": "Audit log",
+    "feature": "view.created audit event recorded",
+    "surface": "backend",
+    "verifyType": "audit",
+    "criticality": "important",
+    "endpoint": "POST /views",
+    "description": "After POST /views, AuditEvent with eventType='view.created' exists in DB."
+  },
+  {
+    "id": "audit-012",
+    "category": "Audit log",
+    "feature": "webhook.deleted audit event recorded",
+    "surface": "backend",
+    "verifyType": "audit",
+    "criticality": "important",
+    "endpoint": "DELETE /webhooks/:id",
+    "description": "After DELETE /webhooks/:id, AuditEvent with eventType='webhook.deleted' exists in DB."
+  },
+  {
+    "id": "webhook-001",
+    "category": "Webhooks",
+    "feature": "Create webhook returns secret once",
+    "surface": "backend",
+    "verifyType": "api",
+    "criticality": "critical",
+    "endpoint": "POST /webhooks",
+    "description": "POST /webhooks returns 201 { data: { id, url, events, active, secret, createdAt } }. The secret field contains the raw secret."
+  },
+  {
+    "id": "webhook-002",
+    "category": "Webhooks",
+    "feature": "List webhooks does not expose secret",
+    "surface": "backend",
+    "verifyType": "api",
+    "criticality": "critical",
+    "endpoint": "GET /webhooks",
+    "description": "GET /webhooks returns 200 { data: [...] } where no entry has a 'secret' field."
+  },
+  {
+    "id": "webhook-003",
+    "category": "Webhooks",
+    "feature": "Rotate secret returns new secret once",
+    "surface": "backend",
+    "verifyType": "api",
+    "criticality": "critical",
+    "endpoint": "POST /webhooks/:id/rotate-secret",
+    "description": "POST /webhooks/:id/rotate-secret returns 200 { data: { ..., secret: <newSecret> } }. Subsequent GET /webhooks does not include the secret."
+  },
+  {
+    "id": "webhook-004",
+    "category": "Webhooks",
+    "feature": "Test endpoint dispatches webhook",
+    "surface": "backend",
+    "verifyType": "api",
+    "criticality": "important",
+    "endpoint": "POST /webhooks/:id/test",
+    "description": "POST /webhooks/:id/test returns 200 { data: { dispatched: true } }."
+  },
+  {
+    "id": "webhook-005",
+    "category": "Webhooks",
+    "feature": "HMAC-SHA256 signature on dispatched payload",
+    "surface": "backend",
+    "verifyType": "webhook",
+    "criticality": "critical",
+    "endpoint": "POST /webhooks/:id/test",
+    "description": "The dispatched POST to the webhook URL includes X-VGX-Signature: sha256=<hmac> header. The HMAC is computed with the endpoint's secret and the raw body."
+  },
+  {
+    "id": "webhook-006",
+    "category": "Webhooks",
+    "feature": "active=false webhook not dispatched",
+    "surface": "backend",
+    "verifyType": "webhook",
+    "criticality": "critical",
+    "endpoint": "PATCH /webhooks/:id",
+    "description": "After PATCH /webhooks/:id with { active: false }, no webhook POST is sent when a task event fires."
+  },
+  {
+    "id": "webhook-007",
+    "category": "Webhooks",
+    "feature": "Unsubscribed event type not dispatched",
+    "surface": "backend",
+    "verifyType": "webhook",
+    "criticality": "critical",
+    "endpoint": "POST /webhooks",
+    "description": "A webhook subscribed only to 'task.created' does NOT receive a POST when 'task.updated' fires."
+  },
+  {
+    "id": "webhook-008",
+    "category": "Webhooks",
+    "feature": "All 7 task event types fire webhooks",
+    "surface": "backend",
+    "verifyType": "webhook",
+    "criticality": "important",
+    "endpoint": "PATCH /tasks/:id",
+    "description": "Webhooks fire for: task.created, task.updated, task.status.changed, task.completed, task.archived, task.unarchived, task.deleted — each triggering the correct event type."
+  },
+  {
+    "id": "webhook-009",
+    "category": "Webhooks",
+    "feature": "Webhook dispatch is fire-and-forget (non-blocking)",
+    "surface": "backend",
+    "verifyType": "api",
+    "criticality": "important",
+    "endpoint": "PATCH /tasks/:id",
+    "description": "PATCH /tasks/:id responds within 500ms even if the webhook receiver is slow (e.g., 2s delay). Dispatch is non-blocking."
+  },
+  {
+    "id": "reminder-001",
+    "category": "Reminders",
+    "feature": "Due-today endpoint returns tasks due today",
+    "surface": "backend",
+    "verifyType": "api",
+    "criticality": "critical",
+    "endpoint": "GET /reminders/due-today",
+    "description": "GET /reminders/due-today with a service-scope token returns 200 { data: { grouped: { <userId>: [...tasks] } } } containing tasks due today."
+  },
+  {
+    "id": "reminder-002",
+    "category": "Reminders",
+    "feature": "Overdue endpoint returns overdue tasks",
+    "surface": "backend",
+    "verifyType": "api",
+    "criticality": "critical",
+    "endpoint": "GET /reminders/overdue",
+    "description": "GET /reminders/overdue with a service-scope token returns 200 with tasks whose dueDate is before today and status != DONE."
+  },
+  {
+    "id": "reminder-003",
+    "category": "Reminders",
+    "feature": "Reminder endpoints reject user-scope tokens with 403",
+    "surface": "backend",
+    "verifyType": "api",
+    "criticality": "critical",
+    "endpoint": "GET /reminders/due-today",
+    "description": "GET /reminders/due-today with a user-scope API token (scope='user') returns 403."
+  },
+  {
+    "id": "reminder-004",
+    "category": "Reminders",
+    "feature": "Reminders grouped by owner",
+    "surface": "backend",
+    "verifyType": "api",
+    "criticality": "important",
+    "endpoint": "GET /reminders/due-today",
+    "description": "GET /reminders/due-today response has tasks grouped by userId key so n8n can iterate per owner."
+  },
+  {
+    "id": "search-001",
+    "category": "Search",
+    "feature": "Search matches projects by name",
+    "surface": "backend",
+    "verifyType": "api",
+    "criticality": "critical",
+    "endpoint": "GET /search",
+    "description": "GET /search?q=<term> returns 200 { data: { projects: [...], tasks: [...], comments: [...] } } where projects whose name ILIKE-matches the term appear."
+  },
+  {
+    "id": "search-002",
+    "category": "Search",
+    "feature": "Search matches tasks by title or description",
+    "surface": "backend",
+    "verifyType": "api",
+    "criticality": "critical",
+    "endpoint": "GET /search",
+    "description": "GET /search?q=<term> returns tasks whose title or description contains the term (ILIKE)."
+  },
+  {
+    "id": "search-003",
+    "category": "Search",
+    "feature": "Search results isolated to caller's data",
+    "surface": "backend",
+    "verifyType": "api",
+    "criticality": "critical",
+    "endpoint": "GET /search",
+    "description": "GET /search?q=<term> returns only projects, tasks, and comments owned by or accessible to the authenticated user. Other users' data must not appear."
+  },
+  {
+    "id": "search-004",
+    "category": "Search",
+    "feature": "Minimum query length enforced",
+    "surface": "backend",
+    "verifyType": "api",
+    "criticality": "important",
+    "endpoint": "GET /search",
+    "description": "GET /search?q=a (1 char) returns 400 with a validation error about minimum query length."
+  },
+  {
+    "id": "search-005",
+    "category": "Search",
+    "feature": "Maximum query length enforced",
+    "surface": "backend",
+    "verifyType": "api",
+    "criticality": "important",
+    "endpoint": "GET /search",
+    "description": "GET /search?q=<200+ chars> returns 400 with a validation error about maximum query length."
+  },
+  {
+    "id": "fe-001",
+    "category": "Frontend wiring",
+    "feature": "Dark/light mode toggle cycles and persists",
+    "surface": "frontend",
+    "verifyType": "ui",
+    "criticality": "critical",
+    "endpoint": null,
+    "description": "Clicking the theme toggle on the UI cycles through modes. After a page reload, the selected theme is preserved (stored in localStorage key vgxt-dark)."
+  },
+  {
+    "id": "fe-002",
+    "category": "Frontend wiring",
+    "feature": "Sidebar shows 3 default views for new users",
+    "surface": "frontend",
+    "verifyType": "ui",
+    "criticality": "critical",
+    "endpoint": null,
+    "description": "After registering a new account and logging in, the sidebar displays exactly 3 saved view items (the seeded defaults)."
+  },
+  {
+    "id": "fe-003",
+    "category": "Frontend wiring",
+    "feature": "AuthCallback page parses token from URL fragment",
+    "surface": "frontend",
+    "verifyType": "ui",
+    "criticality": "critical",
+    "endpoint": null,
+    "description": "Navigating to /auth/callback#access_token=<supabase_token> triggers the SSO exchange flow, calls POST /auth/sso/exchange, and stores the JWT in localStorage."
+  },
+  {
+    "id": "fe-004",
+    "category": "Frontend wiring",
+    "feature": "401 response clears localStorage and redirects to /login",
+    "surface": "frontend",
+    "verifyType": "ui",
+    "criticality": "critical",
+    "endpoint": null,
+    "description": "If any API call returns 401, the frontend removes the auth token from localStorage and navigates to /login."
+  },
+  {
+    "id": "fe-005",
+    "category": "Frontend wiring",
+    "feature": "SSO buttons present on login page",
+    "surface": "frontend",
+    "verifyType": "ui",
+    "criticality": "important",
+    "endpoint": null,
+    "description": "The /login page shows buttons or links that initiate Google and GitHub OAuth flows via the Supabase redirect URL."
+  },
+  {
+    "id": "fe-006",
+    "category": "Frontend wiring",
+    "feature": "CSV export button present on project view",
+    "surface": "frontend",
+    "verifyType": "ui",
+    "criticality": "important",
+    "endpoint": null,
+    "description": "The project detail page has an Export CSV button that downloads the project's tasks as a CSV file."
+  },
+  {
+    "id": "fe-007",
+    "category": "Frontend wiring",
+    "feature": "API tokens settings page accessible",
+    "surface": "frontend",
+    "verifyType": "ui",
+    "criticality": "important",
+    "endpoint": null,
+    "description": "Navigating to /settings/tokens (or equivalent) renders the API token management UI."
+  },
+  {
+    "id": "fe-008",
+    "category": "Frontend wiring",
+    "feature": "Webhooks settings page accessible",
+    "surface": "frontend",
+    "verifyType": "ui",
+    "criticality": "important",
+    "endpoint": null,
+    "description": "Navigating to /settings/webhooks (or equivalent) renders the webhook management UI."
+  },
+  {
+    "id": "fe-009",
+    "category": "Frontend wiring",
+    "feature": "Bulk action bar appears on task selection",
+    "surface": "frontend",
+    "verifyType": "ui",
+    "criticality": "important",
+    "endpoint": null,
+    "description": "Checking a task checkbox reveals a bulk action bar at the bottom or top of the list."
+  },
+  {
+    "id": "fe-010",
+    "category": "Frontend wiring",
+    "feature": "Cmd+K search opens search panel",
+    "surface": "frontend",
+    "verifyType": "ui",
+    "criticality": "nice-to-have",
+    "endpoint": null,
+    "description": "Pressing Cmd+K (or Ctrl+K) on any page opens the global search panel."
+  },
+  {
+    "id": "brand-001",
+    "category": "VGX branding",
+    "feature": "VGX logo present in header",
+    "surface": "frontend",
+    "verifyType": "ui",
+    "criticality": "important",
+    "endpoint": null,
+    "description": "The app header/sidebar contains an <img> element that loads /vgx-light.webp or /vgx-dark.webp depending on mode."
+  },
+  {
+    "id": "brand-002",
+    "category": "VGX branding",
+    "feature": "Primary buttons use vgx-gradient background",
+    "surface": "frontend",
+    "verifyType": "ui",
+    "criticality": "important",
+    "endpoint": null,
+    "description": "Primary action buttons (e.g., 'Create Project', 'Save') have a computed background that matches the VGX gradient (purple to pink), not a flat colour."
+  },
+  {
+    "id": "brand-003",
+    "category": "VGX branding",
+    "feature": "Montserrat and Ubuntu fonts loaded",
+    "surface": "frontend",
+    "verifyType": "ui",
+    "criticality": "important",
+    "endpoint": null,
+    "description": "The page's computed font-family for heading elements includes 'Montserrat' and for body text includes 'Ubuntu'."
+  },
+  {
+    "id": "brand-004",
+    "category": "VGX branding",
+    "feature": "Dark mode logo swap works correctly",
+    "surface": "frontend",
+    "verifyType": "ui",
+    "criticality": "important",
+    "endpoint": null,
+    "description": "When dark mode is active, the logo src switches to /vgx-dark.webp. In light mode it uses /vgx-light.webp."
+  }
+]

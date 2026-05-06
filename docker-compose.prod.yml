@@ -1,0 +1,47 @@
+# Copyright (c) 2026 VGX Global Consulting (OPC) Private Limited. All rights reserved.
+# VGXTaskCo — Production compose file
+# Deployed to: /opt/HostedSites/tasks.vgx.digital/docker-compose.prod.yml
+
+services:
+  api:
+    image: vgxconsulting/taskco-api:${APP_VERSION:-latest}
+    container_name: vgxtaskco-api
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      - NODE_ENV=production
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O-", "http://localhost:4000/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start-period: 15s
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: "1.0"
+
+  web:
+    image: vgxconsulting/taskco-web:${APP_VERSION:-latest}
+    container_name: vgxtaskco-web
+    restart: unless-stopped
+    ports:
+      - "4181:80"
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O-", "http://localhost:80/"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+          cpus: "0.5"
+
+networks:
+  default:
+    name: vgxtaskco-network
