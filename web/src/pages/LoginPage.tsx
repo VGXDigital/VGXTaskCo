@@ -1,6 +1,6 @@
 // Copyright (c) 2026 VGX Global Consulting (OPC) Private Limited. All rights reserved.
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -34,11 +34,6 @@ interface LoginPageProps { onLogin: () => void }
 export function LoginPage({ onLogin }: LoginPageProps) {
   const [tab, setTab] = useState<'login' | 'register'>('login')
   const [loading, setLoading] = useState(false)
-  const [darkMode, setDarkMode] = useState(false)
-
-  useEffect(() => {
-    setDarkMode(document.documentElement.classList.contains('dark'))
-  }, [])
 
   const loginForm = useForm<LoginFields>({ resolver: zodResolver(loginSchema) })
   const registerForm = useForm<RegisterFields>({ resolver: zodResolver(registerSchema) })
@@ -85,7 +80,7 @@ export function LoginPage({ onLogin }: LoginPageProps) {
         {/* Brand */}
         <div className="mb-7 flex flex-col items-center gap-3">
           <img
-            src={darkMode ? '/vgx-dark.webp' : '/vgx-dark.webp'}
+            src="/vgx-dark.webp"
             alt="VGX"
             className="h-10 w-auto object-contain"
           />

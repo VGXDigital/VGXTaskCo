@@ -5,9 +5,11 @@ import { ArrowLeft, Loader2 } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { apiClient } from '../lib/api-client'
+import { buildTaskQueryString } from '../lib/query'
 import { useViews, useUpdateView, useDeleteView } from '../hooks/useViews'
 import { useProjects } from '../hooks/useProjects'
 import { TaskCard } from '../components/tasks/TaskCard'
+import { TaskDetailModal } from '../components/tasks/TaskDetailModal'
 import { Button } from '../components/ui/Button'
 import type { Project, SavedView, Task } from '../types'
 
@@ -17,14 +19,14 @@ interface CrossProjectViewPageProps {
 }
 
 function buildProjectTasksUrl(projectId: string, filter: SavedView['filter']): string {
-  const params = new URLSearchParams()
-  if (filter.dueWithin) params.set('dueWithin', filter.dueWithin)
-  if (filter.search) params.set('search', filter.search)
-  if (filter.includeArchived) params.set('includeArchived', 'true')
-  if (filter.priority && filter.priority.length === 1) params.set('priority', filter.priority[0])
-  if (filter.status && filter.status.length === 1) params.set('status', filter.status[0])
-  const qs = params.toString()
-  return `/projects/${projectId}/tasks${qs ? `?${qs}` : ''}`
+  const qs = buildTaskQueryString({
+    dueWithin: filter.dueWithin,
+    search: filter.search,
+    includeArchived: filter.includeArchived,
+    priority: filter.priority && filter.priority.length === 1 ? filter.priority[0] : undefined,
+    status: filter.status && filter.status.length === 1 ? filter.status[0] : undefined,
+  })
+  return `/projects/${projectId}/tasks${qs}`
 }
 
 function useAllProjectTasks(projects: Project[] | undefined, filter: SavedView['filter']) {
@@ -213,9 +215,12 @@ export function CrossProjectViewPage({ viewId, onBack }: CrossProjectViewPagePro
         </div>
       )}
 
-      {/* Placeholder for task detail — wired to selectedTaskId */}
       {selectedTaskId && (
-        <div className="hidden">{/* TaskDetailModal would go here */}</div>
+        <TaskDetailModal
+          taskId={selectedTaskId}
+          open={true}
+          onClose={() => setSelectedTaskId(null)}
+        />
       )}
     </div>
   )

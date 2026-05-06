@@ -10,6 +10,7 @@ import { z } from 'zod'
 import { toast } from 'sonner'
 import { useProject, useUpdateProject } from '../hooks/useProjects'
 import { useTasks } from '../hooks/useTasks'
+import { buildTaskQueryString } from '../lib/query'
 import { useProjectViews, useCreateView } from '../hooks/useViews'
 import { TaskCard } from '../components/tasks/TaskCard'
 import { CreateTaskModal } from '../components/tasks/CreateTaskModal'
@@ -28,20 +29,6 @@ const COLUMNS: { status: TaskStatus; label: string }[] = [
 type PriorityFilter = 'ALL' | 'LOW' | 'MEDIUM' | 'HIGH'
 type DueFilter = 'ALL' | 'today' | 'thisWeek' | 'overdue'
 
-function buildFilterQueryString(
-  priority: PriorityFilter,
-  due: DueFilter,
-  search: string,
-  includeArchived: boolean,
-): string {
-  const params = new URLSearchParams()
-  if (priority !== 'ALL') params.set('priority', priority)
-  if (due !== 'ALL') params.set('dueWithin', due)
-  if (search) params.set('search', search)
-  if (includeArchived) params.set('includeArchived', 'true')
-  const qs = params.toString()
-  return qs ? `?${qs}` : ''
-}
 
 const editSchema = z.object({
   name: z.string().min(1, 'Required').max(100),
@@ -240,7 +227,12 @@ export function ProjectDetailPage({ projectId, onBack }: ProjectDetailPageProps)
           <div className="flex items-center gap-2">
             <ExportButton
               projectId={projectId}
-              currentFilters={buildFilterQueryString(priorityFilter, dueFilter, searchRaw, includeArchived)}
+              currentFilters={buildTaskQueryString({
+                priority: priorityFilter !== 'ALL' ? priorityFilter : undefined,
+                dueWithin: dueFilter !== 'ALL' ? dueFilter : undefined,
+                search: searchRaw || undefined,
+                includeArchived: includeArchived || undefined,
+              })}
             />
             <Button size="sm" variant="secondary" onClick={() => setEditOpen(true)}>
               <Edit2 className="h-3.5 w-3.5" /> Edit

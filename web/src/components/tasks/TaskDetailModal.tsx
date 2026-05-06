@@ -222,7 +222,7 @@ export function TaskDetailModal({ taskId, open, onClose }: TaskDetailModalProps)
 
   function handleUpdate(data: Partial<Task>) {
     if (!task) return
-    updateTask.mutate({ id: task.id, data }, {
+    updateTask.mutate({ id: task.id, projectId: task.projectId, data }, {
       onError: (err) => toast.error(err.message),
     })
   }
