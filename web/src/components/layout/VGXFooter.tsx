@@ -19,7 +19,7 @@ export function VGXFooter() {
   return (
     <div className="border-t border-gray-200 px-4 py-3 dark:border-gray-800">
       <p className="text-xs text-gray-400 dark:text-gray-500">
-        © 2026{' '}
+        © 2026 Built by{' '}
         <a
           href="https://vgx.digital"
           target="_blank"
@@ -28,9 +28,7 @@ export function VGXFooter() {
         >
           VGX Digital
         </a>
-        {data?.version && (
-          <span className="ml-2 text-gray-300 dark:text-gray-600">v{data.version}</span>
-        )}
+        {data?.version && <> • v{data.version}</>}
       </p>
     </div>
   )
