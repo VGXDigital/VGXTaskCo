@@ -1428,5 +1428,55 @@
     "criticality": "important",
     "endpoint": null,
     "description": "When dark mode is active, the logo src switches to /vgx-dark.webp. In light mode it uses /vgx-light.webp."
+  },
+  {
+    "id": "tc-ai-001",
+    "category": "task-creation",
+    "feature": "AI smart input pre-fills title, priority, and due date",
+    "surface": "frontend",
+    "verifyType": "ui",
+    "criticality": "important",
+    "endpoint": "POST /tasks/parse",
+    "description": "Open create task modal, type 'Fix login bug by Friday high priority' into the smart input field, wait 1 second for AI parse, then verify: title field is pre-filled with a non-empty value, priority is set to HIGH, and a due date has been populated. Depends on Groq API availability."
+  },
+  {
+    "id": "tc-kbd-001",
+    "category": "task-creation",
+    "feature": "Keyboard shortcut N opens create task modal",
+    "surface": "frontend",
+    "verifyType": "ui",
+    "criticality": "critical",
+    "endpoint": null,
+    "description": "On a project page (not inside an input), pressing the N key opens the create task modal. The modal must become visible within 1 second."
+  },
+  {
+    "id": "kanban-006",
+    "category": "kanban",
+    "feature": "Drag task between Kanban columns updates status",
+    "surface": "frontend",
+    "verifyType": "ui",
+    "criticality": "critical",
+    "endpoint": null,
+    "description": "Create a TODO task, then drag its card from the TODO column to the IN_PROGRESS column using dragAndDrop. After the drop the task card should appear in the IN_PROGRESS column and no longer in TODO."
+  },
+  {
+    "id": "kanban-007",
+    "category": "kanban",
+    "feature": "Kanban column Add task button opens modal with correct default status",
+    "surface": "frontend",
+    "verifyType": "ui",
+    "criticality": "critical",
+    "endpoint": null,
+    "description": "Clicking the 'Add task' button at the bottom of a Kanban column opens the create task modal. The status field in the modal should default to the column's status (e.g., IN_PROGRESS when clicking the In Progress column's button)."
+  },
+  {
+    "id": "td-001",
+    "category": "task-detail",
+    "feature": "Task detail modal loads title, status, and priority",
+    "surface": "frontend",
+    "verifyType": "ui",
+    "criticality": "critical",
+    "endpoint": "GET /tasks/:id",
+    "description": "Clicking a task card on the project page opens a task detail modal. The modal must display the task's title, status, and priority visibly within 3 seconds."
   }
 ]

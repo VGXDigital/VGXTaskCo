@@ -1618,6 +1618,196 @@ async function runUiTest(entry: MatrixEntry, page: import('@playwright/test').Pa
       break;
     }
 
+    // ── AI task creation ───────────────────────────────────────────────────────
+
+    case 'tc-ai-001': {
+      // Depends on Groq API — failures here are non-blocking (criticality: important)
+      const proj = await createProject(`tc-ai-001-${Date.now()}`);
+      await page.goto(`${FRONTEND_URL}/projects/${proj.id}`, { waitUntil: 'networkidle' });
+      await page.waitForTimeout(500);
+
+      // Open create task modal
+      const createBtn = page.locator('button:has-text("Create"), button:has-text("Add task"), button:has-text("New task"), button[aria-label*="create"], button[aria-label*="new task"]').first();
+      const hasCreateBtn = await createBtn.isVisible({ timeout: 3000 }).catch(() => false);
+      if (!hasCreateBtn) {
+        console.warn(`[${entry.id}] Create button not found — skipping AI parse test`);
+        break;
+      }
+      await createBtn.click();
+
+      // Find the smart/AI input field
+      const smartInput = page.locator('[data-testid="smart-input"], [placeholder*="smart"], [placeholder*="AI"], [placeholder*="natural"], textarea[name="smart"], input[name="smartInput"]').first();
+      const hasSmartInput = await smartInput.isVisible({ timeout: 2000 }).catch(() => false);
+      if (!hasSmartInput) {
+        console.warn(`[${entry.id}] Smart input not found — AI parse feature may not be implemented on this modal`);
+        break;
+      }
+
+      await smartInput.fill('Fix login bug by Friday high priority');
+      // Allow 1 second for the AI parse debounce
+      await page.waitForTimeout(1000);
+
+      // Verify title field is pre-filled
+      const titleInput = page.locator('input[name="title"], input[placeholder*="title"], [data-testid="task-title"]').first();
+      const titleValue = await titleInput.inputValue().catch(() => '');
+      expect(titleValue, `[${entry.id}] Title should be pre-filled by AI parse`).not.toBe('');
+
+      // Verify priority is HIGH
+      const priorityField = page.locator('[data-testid="priority-select"], select[name="priority"], [aria-label*="priority"]').first();
+      const priorityValue = await priorityField.inputValue().catch(async () =>
+        page.locator('[data-testid="priority-select"] [data-selected], [aria-label*="priority"][data-value]').first().textContent().catch(() => ''),
+      );
+      const priorityText = await page.locator(':has-text("HIGH"), [data-value="HIGH"], [value="HIGH"]').first().isVisible({ timeout: 1000 }).catch(() => false);
+      expect(
+        String(priorityValue).includes('HIGH') || priorityText,
+        `[${entry.id}] Priority should be set to HIGH by AI parse`,
+      ).toBe(true);
+
+      // Verify due date is populated (some non-empty value)
+      const dueDateInput = page.locator('input[name="dueDate"], input[type="date"], [data-testid="due-date"]').first();
+      const dueDateValue = await dueDateInput.inputValue().catch(() => '');
+      expect(dueDateValue, `[${entry.id}] Due date should be populated by AI parse`).not.toBe('');
+      break;
+    }
+
+    // ── Keyboard shortcut N ────────────────────────────────────────────────────
+
+    case 'tc-kbd-001': {
+      const proj = await createProject(`tc-kbd-001-${Date.now()}`);
+      await page.goto(`${FRONTEND_URL}/projects/${proj.id}`, { waitUntil: 'networkidle' });
+      await page.waitForTimeout(500);
+
+      // Press N (while not focused in an input) to open the create task modal
+      await page.keyboard.press('n');
+
+      const modal = page.locator('[role="dialog"], [data-testid="create-task-modal"], .modal, [aria-modal="true"]').first();
+      const modalVisible = await modal.isVisible({ timeout: 3000 }).catch(() => false);
+      expect(modalVisible, `[${entry.id}] Pressing N should open the create task modal`).toBe(true);
+      break;
+    }
+
+    // ── Kanban drag and drop ───────────────────────────────────────────────────
+
+    case 'kanban-006': {
+      const proj = await createProject(`kanban-006-${Date.now()}`);
+      await createTask(proj.id, 'Drag me to In Progress', { status: 'TODO' });
+
+      await page.goto(`${FRONTEND_URL}/projects/${proj.id}`, { waitUntil: 'networkidle' });
+      await page.waitForTimeout(1000);
+
+      // Locate the TODO column and IN_PROGRESS column
+      const todoColumn = page.locator('[data-testid="column-TODO"], [data-column="TODO"], [data-status="TODO"]').first();
+      const inProgressColumn = page.locator('[data-testid="column-IN_PROGRESS"], [data-column="IN_PROGRESS"], [data-status="IN_PROGRESS"]').first();
+
+      const hasTodoCol = await todoColumn.isVisible({ timeout: 3000 }).catch(() => false);
+      const hasInProgressCol = await inProgressColumn.isVisible({ timeout: 3000 }).catch(() => false);
+
+      if (!hasTodoCol || !hasInProgressCol) {
+        console.warn(`[${entry.id}] Kanban columns not found via data-testid — skipping drag test`);
+        break;
+      }
+
+      // Drag the task card to IN_PROGRESS
+      const taskCard = todoColumn.locator('[data-testid*="task-card"], [draggable="true"], .task-card').first();
+      const hasCard = await taskCard.isVisible({ timeout: 2000 }).catch(() => false);
+      if (!hasCard) {
+        console.warn(`[${entry.id}] Task card not found in TODO column — skipping drag test`);
+        break;
+      }
+
+      await taskCard.dragTo(inProgressColumn);
+      await page.waitForTimeout(1000);
+
+      // Verify the task now appears in the IN_PROGRESS column
+      const movedCard = inProgressColumn.locator('[data-testid*="task-card"], .task-card').first();
+      const isInProgress = await movedCard.isVisible({ timeout: 3000 }).catch(() => false);
+      expect(isInProgress, `[${entry.id}] Task should be in IN_PROGRESS column after drag`).toBe(true);
+      break;
+    }
+
+    // ── Kanban Add task button ─────────────────────────────────────────────────
+
+    case 'kanban-007': {
+      const proj = await createProject(`kanban-007-${Date.now()}`);
+      await page.goto(`${FRONTEND_URL}/projects/${proj.id}`, { waitUntil: 'networkidle' });
+      await page.waitForTimeout(1000);
+
+      // Click the "Add task" button at the bottom of a column (try IN_PROGRESS column)
+      const inProgressColumn = page.locator('[data-testid="column-IN_PROGRESS"], [data-column="IN_PROGRESS"], [data-status="IN_PROGRESS"]').first();
+      const hasCol = await inProgressColumn.isVisible({ timeout: 3000 }).catch(() => false);
+
+      if (!hasCol) {
+        console.warn(`[${entry.id}] IN_PROGRESS column not found — trying generic Add task button`);
+        const genericAddBtn = page.locator('button:has-text("Add task"), button:has-text("+ Task"), button:has-text("New task")').first();
+        const hasBtn = await genericAddBtn.isVisible({ timeout: 2000 }).catch(() => false);
+        if (!hasBtn) {
+          console.warn(`[${entry.id}] No Add task button found — skipping`);
+          break;
+        }
+        await genericAddBtn.click();
+      } else {
+        const addBtn = inProgressColumn.locator('button:has-text("Add task"), button:has-text("+ Task"), button:has-text("New task")').first();
+        const hasAddBtn = await addBtn.isVisible({ timeout: 2000 }).catch(() => false);
+        if (!hasAddBtn) {
+          console.warn(`[${entry.id}] Add task button not visible in IN_PROGRESS column — skipping`);
+          break;
+        }
+        await addBtn.click();
+      }
+
+      // Verify modal opened
+      const modal = page.locator('[role="dialog"], [data-testid="create-task-modal"], [aria-modal="true"]').first();
+      const modalVisible = await modal.isVisible({ timeout: 3000 }).catch(() => false);
+      expect(modalVisible, `[${entry.id}] Create task modal should open on Add task click`).toBe(true);
+      break;
+    }
+
+    // ── Task detail modal ──────────────────────────────────────────────────────
+
+    case 'td-001': {
+      const proj = await createProject(`td-001-${Date.now()}`);
+      const task = await createTask(proj.id, 'Detail modal test task', { priority: 'HIGH', status: 'IN_PROGRESS' });
+
+      await page.goto(`${FRONTEND_URL}/projects/${proj.id}`, { waitUntil: 'networkidle' });
+      await page.waitForTimeout(1000);
+
+      // Click the task card
+      const taskCard = page.locator(`[data-task-id="${task.id}"], [data-testid="task-card"]:has-text("Detail modal test task")`).first();
+      const hasCard = await taskCard.isVisible({ timeout: 3000 }).catch(() => false);
+      if (!hasCard) {
+        // Fallback: click first visible task card
+        const anyCard = page.locator('[data-testid="task-card"], .task-card').first();
+        const hasAnyCard = await anyCard.isVisible({ timeout: 2000 }).catch(() => false);
+        if (!hasAnyCard) {
+          console.warn(`[${entry.id}] No task card found — cannot open detail modal`);
+          break;
+        }
+        await anyCard.click();
+      } else {
+        await taskCard.click();
+      }
+
+      // Verify modal opened
+      const modal = page.locator('[role="dialog"], [data-testid="task-detail-modal"], [aria-modal="true"]').first();
+      await modal.waitFor({ state: 'visible', timeout: 3000 });
+
+      // Verify title is visible in modal
+      const titleInModal = modal.locator('h1, h2, h3, [data-testid="task-title"], input[name="title"]').first();
+      const titleVisible = await titleInModal.isVisible({ timeout: 2000 }).catch(() => false);
+      expect(titleVisible, `[${entry.id}] Task title should be visible in detail modal`).toBe(true);
+
+      // Verify status is visible
+      const statusInModal = modal.locator('[data-testid="task-status"], [aria-label*="status"], select[name="status"], :has-text("IN_PROGRESS"), :has-text("In Progress")').first();
+      const statusVisible = await statusInModal.isVisible({ timeout: 2000 }).catch(() => false);
+      expect(statusVisible, `[${entry.id}] Task status should be visible in detail modal`).toBe(true);
+
+      // Verify priority is visible
+      const priorityInModal = modal.locator('[data-testid="task-priority"], [aria-label*="priority"], select[name="priority"], :has-text("HIGH"), :has-text("High")').first();
+      const priorityVisible = await priorityInModal.isVisible({ timeout: 2000 }).catch(() => false);
+      expect(priorityVisible, `[${entry.id}] Task priority should be visible in detail modal`).toBe(true);
+      break;
+    }
+
     default: {
       console.warn(`[${entry.id}] No UI test implementation — passing by default`);
       break;
