@@ -247,13 +247,22 @@ describe('Service scope', () => {
     userToken = userRes.json<{ data: { token: string } }>().data.token;
   });
 
-  it('service-scoped token can access GET /internal/reminders/due-today', async () => {
+  it('valid x-internal-key can access GET /internal/reminders/due-today', async () => {
+    const res = await app.inject({
+      method: 'GET',
+      url: '/internal/reminders/due-today',
+      headers: { 'x-internal-key': 'dev-internal-key' },
+    });
+    expect(res.statusCode).toBe(200);
+  });
+
+  it('service-scoped API token gets 403 on GET /internal/reminders/due-today', async () => {
     const res = await app.inject({
       method: 'GET',
       url: '/internal/reminders/due-today',
       headers: { authorization: `Bearer ${serviceToken}` },
     });
-    expect(res.statusCode).toBe(200);
+    expect(res.statusCode).toBe(403);
   });
 
   it('user-scoped API token gets 403 on GET /internal/reminders/due-today', async () => {
