@@ -2,6 +2,7 @@
 
 import type { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
+import { TaskStatus, Priority } from '@prisma/client';
 import { requireAuth } from '../middleware/auth.js';
 import {
   createTaskBodySchema,
@@ -13,6 +14,7 @@ import {
 } from '../schemas/task.js';
 import {
   listTasks,
+  listTasksForProjects,
   createTask,
   updateTask,
   deleteTask,
@@ -24,6 +26,26 @@ import {
 } from '../services/tasks.js';
 
 const cuidParam = z.string().cuid('Invalid id');
+
+const crossProjectQuerySchema = z.object({
+  projectIds: z
+    .string({ error: 'projectIds is required' })
+    .transform((s) =>
+      s
+        .split(',')
+        .map((v) => v.trim())
+        .filter(Boolean),
+    ),
+  status: z.nativeEnum(TaskStatus).optional(),
+  priority: z.nativeEnum(Priority).optional(),
+  dueWithin: z.enum(['today', 'thisWeek', 'overdue', 'doneInLast7Days']).optional(),
+  tagIds: z
+    .string()
+    .optional()
+    .transform((val) => (val ? val.split(',').map((s) => s.trim()).filter(Boolean) : undefined)),
+  search: z.string().max(200).optional(),
+  includeArchived: z.coerce.boolean().optional().default(false),
+});
 
 const taskRoutes: FastifyPluginAsync = async (app) => {
   /**
@@ -131,6 +153,35 @@ const taskRoutes: FastifyPluginAsync = async (app) => {
     }
 
     return reply.status(200).send({ data: result });
+  });
+
+  // ── Cross-project endpoint ────────────────────────────────────────────────
+
+  /**
+   * GET /tasks
+   * Fetches tasks across multiple projects in one request.
+   * Query params: projectIds (comma-separated), status, priority, dueWithin, tagIds, search, includeArchived
+   */
+  app.get('/tasks', { preHandler: [requireAuth] }, async (request, reply) => {
+    const queryParsed = crossProjectQuerySchema.safeParse(request.query);
+    if (!queryParsed.success) {
+      const message = queryParsed.error.issues[0]?.message ?? 'Invalid query parameter';
+      return reply.status(400).send({ error: message });
+    }
+
+    const { projectIds, ...filter } = queryParsed.data;
+
+    if (projectIds.length === 0) {
+      return reply.status(400).send({ error: 'At least one projectId is required' });
+    }
+
+    const tasks = await listTasksForProjects(request.user.id, projectIds, filter);
+
+    if (tasks === null) {
+      return reply.status(404).send({ error: 'One or more projects not found' });
+    }
+
+    return reply.status(200).send({ data: tasks });
   });
 
   // ── Bulk operations ────────────────────────────────────────────────────────

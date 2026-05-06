@@ -58,6 +58,17 @@ For VGX VPS: see [VPS Setup](prompts/VPS-SETUP.md) + GitHub Actions workflow in 
 
 ## Changelog
 
+### 0.6.2 (2026-05-07)
+
+- Bulk ops (bulkSetStatus, bulkMove, bulkArchive, bulkUnarchive) now use `updateMany` instead of N individual `update` calls inside a transaction
+- `resolveTaskOwnership` uses a narrow `select` instead of `include: { project: true }` — loads only what's needed
+- Added composite indexes on Task: `(projectId, archivedAt)`, `(projectId, status)`, `(dueDate, status)`, `(updatedAt)`
+- Added `color` field to Tag model with default `#6b7280`
+- New `GET /tasks` cross-project endpoint: fetch tasks across multiple owned projects in a single request
+- `listTasks` now returns tags (id, value, color) in each task result — `tagIds` filter no longer silently dropped
+- New `listTasksForProjects` service function for efficient cross-project queries
+- `gcTime: 10 * 60 * 1000` added to QueryClient for longer in-memory cache retention
+
 ### 0.1.0 (2026-05-06)
 
 - Full-stack task management: projects, tasks (CRUD + bulk ops + filtering), tags, comments

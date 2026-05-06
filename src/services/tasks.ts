@@ -14,11 +14,13 @@ import { recordActivity } from './activity.js';
 import { recordAuditEvent } from './audit.js';
 import { dispatchWebhook } from './webhooks.js';
 import { assertProjectAccess } from './access.js';
+import type { RequestContext } from '../lib/types.js';
 
-export interface RequestContext {
-  ip: string;
-  headers: Record<string, string | string[] | undefined>;
-}
+export type { RequestContext };
+
+export type TaskWithTags = Task & {
+  tags: { id: string; value: string; color: string }[];
+};
 
 export interface CreateTaskInput {
   title: string;
@@ -41,6 +43,7 @@ export interface TaskFilter {
   status?: TaskStatus;
   priority?: import('@prisma/client').Priority;
   dueWithin?: 'today' | 'thisWeek' | 'overdue' | 'doneInLast7Days';
+  tagIds?: string[];
   search?: string;
   includeArchived?: boolean;
 }
@@ -61,7 +64,7 @@ function utcDayBounds(offsetDays = 0): { start: Date; end: Date } {
 async function resolveTaskOwnership(ids: string[], userId: string) {
   const tasks = await prisma.task.findMany({
     where: { id: { in: ids } },
-    include: { project: true },
+    select: { id: true, projectId: true, status: true, project: { select: { ownerId: true } } },
   });
 
   const foundIds = new Set(tasks.map((t) => t.id));
@@ -83,11 +86,11 @@ export async function listTasks(
   userId: string,
   projectId: string,
   filter: TaskFilter,
-): Promise<Task[] | null> {
+): Promise<TaskWithTags[] | null> {
   const project = await assertProjectAccess(userId, projectId);
   if (!project) return null;
 
-  const { status, priority, dueWithin, search, includeArchived } = filter;
+  const { status, priority, dueWithin, tagIds, search, includeArchived } = filter;
 
   const where: Prisma.TaskWhereInput = { projectId };
 
@@ -121,6 +124,10 @@ export async function listTasks(
     }
   }
 
+  if (tagIds && tagIds.length > 0) {
+    where.tags = { some: { id: { in: tagIds } } };
+  }
+
   if (search) {
     where.OR = [
       { title: { contains: search, mode: 'insensitive' } },
@@ -130,6 +137,80 @@ export async function listTasks(
 
   return prisma.task.findMany({
     where,
+    include: { tags: { select: { id: true, value: true, color: true } } },
+    orderBy: [
+      { dueDate: { sort: 'asc', nulls: 'last' } },
+      { createdAt: 'desc' },
+    ],
+  });
+}
+
+/**
+ * Lists tasks across multiple projects in a single query.
+ * Validates that the caller owns all specified projects before querying.
+ * Returns null if any project is not owned by userId.
+ */
+export async function listTasksForProjects(
+  userId: string,
+  projectIds: string[],
+  filter: TaskFilter,
+): Promise<TaskWithTags[] | null> {
+  // Verify ownership of all requested projects in one query
+  const ownedProjects = await prisma.project.findMany({
+    where: { id: { in: projectIds }, ownerId: userId },
+    select: { id: true },
+  });
+
+  if (ownedProjects.length !== projectIds.length) return null;
+
+  const { status, priority, dueWithin, tagIds, search, includeArchived } = filter;
+
+  const where: Prisma.TaskWhereInput = { projectId: { in: projectIds } };
+
+  if (!includeArchived) {
+    where.archivedAt = null;
+  }
+
+  if (status) where.status = status;
+  if (priority) where.priority = priority;
+
+  if (dueWithin) {
+    const today = utcDayBounds(0);
+    const now = new Date();
+    switch (dueWithin) {
+      case 'today':
+        where.dueDate = { gte: today.start, lte: today.end };
+        break;
+      case 'thisWeek':
+        where.dueDate = { gte: today.start, lte: utcDayBounds(7).end };
+        break;
+      case 'overdue':
+        where.dueDate = { lt: today.start };
+        where.status = { not: TaskStatus.DONE };
+        break;
+      case 'doneInLast7Days': {
+        const sevenAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        where.status = TaskStatus.DONE;
+        where.updatedAt = { gte: sevenAgo };
+        break;
+      }
+    }
+  }
+
+  if (tagIds && tagIds.length > 0) {
+    where.tags = { some: { id: { in: tagIds } } };
+  }
+
+  if (search) {
+    where.OR = [
+      { title: { contains: search, mode: 'insensitive' } },
+      { description: { contains: search, mode: 'insensitive' } },
+    ];
+  }
+
+  return prisma.task.findMany({
+    where,
+    include: { tags: { select: { id: true, value: true, color: true } } },
     orderBy: [
       { dueDate: { sort: 'asc', nulls: 'last' } },
       { createdAt: 'desc' },
@@ -320,9 +401,7 @@ export async function bulkSetStatus(
 
   if (unauthorizedIds.length > 0) return { unauthorizedIds };
 
-  await prisma.$transaction(
-    tasks.map((t) => prisma.task.update({ where: { id: t.id }, data: { status } })),
-  );
+  await prisma.task.updateMany({ where: { id: { in: ids } }, data: { status } });
 
   for (const task of tasks) {
     if (task.status !== status) {
@@ -359,9 +438,7 @@ export async function bulkMove(
 
   if (unauthorizedIds.length > 0) return { unauthorizedIds };
 
-  await prisma.$transaction(
-    tasks.map((t) => prisma.task.update({ where: { id: t.id }, data: { projectId } })),
-  );
+  await prisma.task.updateMany({ where: { id: { in: ids } }, data: { projectId } });
 
   for (const task of tasks) {
     void recordActivity({
@@ -389,9 +466,7 @@ export async function bulkArchive(
   if (unauthorizedIds.length > 0) return { unauthorizedIds };
 
   const now = new Date();
-  await prisma.$transaction(
-    tasks.map((t) => prisma.task.update({ where: { id: t.id }, data: { archivedAt: now } })),
-  );
+  await prisma.task.updateMany({ where: { id: { in: ids } }, data: { archivedAt: now } });
 
   for (const task of tasks) {
     void dispatchWebhook('task.archived', { id: task.id }, userId);
@@ -411,9 +486,7 @@ export async function bulkUnarchive(
 
   if (unauthorizedIds.length > 0) return { unauthorizedIds };
 
-  await prisma.$transaction(
-    tasks.map((t) => prisma.task.update({ where: { id: t.id }, data: { archivedAt: null } })),
-  );
+  await prisma.task.updateMany({ where: { id: { in: ids } }, data: { archivedAt: null } });
 
   for (const task of tasks) {
     void dispatchWebhook('task.unarchived', { id: task.id }, userId);

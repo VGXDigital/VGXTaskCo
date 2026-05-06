@@ -84,11 +84,16 @@ model Task {
   @@index([projectId])
   @@index([status])
   @@index([dueDate])
+  @@index([projectId, archivedAt])
+  @@index([projectId, status])
+  @@index([dueDate, status])
+  @@index([updatedAt])
 }
 
 model Tag {
   id        String   @id @default(cuid())
   value     String
+  color     String   @default("#6b7280")
   ownerId   String
   owner     User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   tasks     Task[]   @relation("TaskTags")
