@@ -12,6 +12,9 @@ import { prisma } from '../lib/prisma.js';
 import { recordActivity } from './activity.js';
 import { recordAuditEvent } from './audit.js';
 import { assertProjectAccess } from './access.js';
+import type { RequestContext } from '../lib/types.js';
+
+export type { RequestContext };
 
 export interface CreateProjectInput {
   name: string;
@@ -23,11 +26,6 @@ export interface UpdateProjectInput {
   name?: string;
   description?: string;
   color?: string;
-}
-
-export interface RequestContext {
-  ip: string;
-  headers: Record<string, string | string[] | undefined>;
 }
 
 /**

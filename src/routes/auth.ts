@@ -14,8 +14,9 @@ const authRoutes: FastifyPluginAsync = async (app) => {
   /**
    * POST /auth/register
    * Creates a new local user account and returns a JWT.
+   * Rate limited to 5 requests per minute per IP to prevent account creation spam.
    */
-  app.post('/register', async (request, reply) => {
+  app.post('/register', { config: { rateLimit: { max: 5, timeWindow: '1 minute' } } }, async (request, reply) => {
     const parsed = registerBodySchema.safeParse(request.body);
     if (!parsed.success) {
       const message = parsed.error.issues[0]?.message ?? 'Validation error';
@@ -59,8 +60,9 @@ const authRoutes: FastifyPluginAsync = async (app) => {
    * POST /auth/login
    * Authenticates with email + password, returns a JWT.
    * Same error message for wrong email or wrong password — no existence leakage.
+   * Rate limited to 10 requests per minute per IP to slow credential stuffing.
    */
-  app.post('/login', async (request, reply) => {
+  app.post('/login', { config: { rateLimit: { max: 10, timeWindow: '1 minute' } } }, async (request, reply) => {
     const parsed = loginBodySchema.safeParse(request.body);
     if (!parsed.success) {
       const message = parsed.error.issues[0]?.message ?? 'Validation error';
@@ -117,8 +119,9 @@ const authRoutes: FastifyPluginAsync = async (app) => {
    * POST /auth/sso/exchange
    * Exchanges a Supabase OAuth access token for our own JWT.
    * Supports Google and GitHub providers. No prior authentication required.
+   * Rate limited to 10 requests per minute per IP.
    */
-  app.post('/sso/exchange', async (request, reply) => {
+  app.post('/sso/exchange', { config: { rateLimit: { max: 10, timeWindow: '1 minute' } } }, async (request, reply) => {
     const parsed = ssoExchangeBodySchema.safeParse(request.body);
     if (!parsed.success) {
       const message = parsed.error.issues[0]?.message ?? 'Validation error';
@@ -195,16 +198,21 @@ const authRoutes: FastifyPluginAsync = async (app) => {
       });
       dbUser = existingUser;
     } else if (existingByEmail) {
-      // Email matched a different auth path — link the provider ID
-      const updated = await prisma.user.update({
-        where: { id: existingByEmail.id },
-        data:
-          providerField === 'googleId'
-            ? { googleId: providerUserId, lastLoginAt: new Date() }
-            : { githubId: providerUserId, lastLoginAt: new Date() },
-        select: selectFields,
+      // Email matched a local or different-provider account.
+      // Silent auto-linking is an account takeover vector — an attacker who controls
+      // a social account with the same email could hijack a local account.
+      // Reject and require the user to sign in with their original method.
+      void recordAuditEvent({
+        eventType: 'auth.sso.link_conflict',
+        request: {
+          ip: request.ip,
+          headers: request.headers as Record<string, string | string[] | undefined>,
+        },
+        metadata: { provider, email },
       });
-      dbUser = updated;
+      return reply.status(409).send({
+        error: 'An account with this email already exists. Sign in with your original method.',
+      });
     } else {
       // New user — create with provider details
       const created = await prisma.user.create({

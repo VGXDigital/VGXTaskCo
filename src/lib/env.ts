@@ -29,6 +29,23 @@ const envSchema = z.object({
   API_TOKEN_PEPPER: z
     .string()
     .min(32, 'API_TOKEN_PEPPER must be at least 32 characters'),
+  // ── Internal service key ────────────────────────────────────────────────────
+  // Used to authenticate requests from internal automation (n8n reminders, cron jobs).
+  // Required in production. Defaults to an insecure dev value in non-production.
+  INTERNAL_API_KEY: z
+    .string()
+    .optional()
+    .transform((val, ctx) => {
+      if (val) return val;
+      if (process.env['NODE_ENV'] === 'production') {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'INTERNAL_API_KEY is required in production',
+        });
+        return z.NEVER;
+      }
+      return 'dev-internal-key';
+    }),
   // ── SSO (optional — local auth still works without these) ──────────────────
   SUPABASE_URL: z.string().url().optional(),
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1).optional(),

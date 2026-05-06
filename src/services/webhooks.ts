@@ -2,6 +2,7 @@
 
 import { createHmac } from 'node:crypto';
 import { prisma } from '../lib/prisma.js';
+import { logger } from '../lib/logger.js';
 
 /**
  * Fire-and-forget webhook dispatcher.
@@ -48,13 +49,13 @@ export async function dispatchWebhook(
             signal: controller.signal,
           });
         } catch (err) {
-          console.error(`[webhooks] Failed to dispatch to ${endpoint.url}:`, err);
+          logger.error({ err, url: endpoint.url }, '[webhooks] Failed to dispatch');
         } finally {
           clearTimeout(timeout);
         }
       }),
     );
   } catch (err) {
-    console.error('[webhooks] dispatchWebhook error:', err);
+    logger.error({ err }, '[webhooks] dispatchWebhook error');
   }
 }

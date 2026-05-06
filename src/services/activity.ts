@@ -2,6 +2,7 @@
 
 import { Prisma } from '@prisma/client';
 import { prisma } from '../lib/prisma.js';
+import { logger } from '../lib/logger.js';
 
 /**
  * Append-only activity logger. Never throws — failures are logged only.
@@ -28,6 +29,6 @@ export async function recordActivity(params: {
       },
     });
   } catch (err) {
-    console.error('[activity] Failed to record activity:', err);
+    logger.error({ err }, '[activity] Failed to record activity');
   }
 }

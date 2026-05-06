@@ -15,6 +15,7 @@ import {
 import {
   listTasks,
   listTasksForProjects,
+  getTask,
   createTask,
   updateTask,
   deleteTask,
@@ -103,6 +104,26 @@ const taskRoutes: FastifyPluginAsync = async (app) => {
     }
 
     return reply.status(200).send({ data: tasks });
+  });
+
+  /**
+   * GET /tasks/:id
+   * Returns a single task by id. Ownership verified via parent project.
+   * Used by TaskDetailModal on the frontend.
+   */
+  app.get('/tasks/:id', { preHandler: [requireAuth] }, async (request, reply) => {
+    const idParsed = cuidParam.safeParse((request.params as { id: string }).id);
+    if (!idParsed.success) {
+      return reply.status(400).send({ error: 'Invalid task id' });
+    }
+
+    const task = await getTask(request.user.id, idParsed.data);
+
+    if (!task) {
+      return reply.status(404).send({ error: 'Task not found' });
+    }
+
+    return reply.status(200).send({ data: task });
   });
 
   /**

@@ -3,19 +3,27 @@
 import type { FastifyPluginAsync } from 'fastify';
 import { TaskStatus } from '@prisma/client';
 import { prisma } from '../lib/prisma.js';
-import { requireAuthOrApiToken } from '../middleware/api-token.js';
+import { env } from '../lib/env.js';
+
+/**
+ * Validates the x-internal-key header against the configured INTERNAL_API_KEY.
+ * Returns true if the key is present and matches; false otherwise.
+ */
+function isValidInternalKey(key: string | undefined): boolean {
+  return typeof key === 'string' && key === env.INTERNAL_API_KEY;
+}
 
 const reminderRoutes: FastifyPluginAsync = async (app) => {
   /**
    * GET /internal/reminders/due-today
-   * All tasks due today across all users. Service token required.
+   * All tasks due today across all users.
+   * Requires x-internal-key header matching INTERNAL_API_KEY env var.
    */
   app.get(
     '/internal/reminders/due-today',
-    { preHandler: [requireAuthOrApiToken] },
     async (request, reply) => {
-      if (request.apiTokenScope !== 'service') {
-        return reply.status(403).send({ error: 'Service token required' });
+      if (!isValidInternalKey(request.headers['x-internal-key'] as string | undefined)) {
+        return reply.status(403).send({ error: 'Forbidden' });
       }
 
       const now = new Date();
@@ -55,14 +63,14 @@ const reminderRoutes: FastifyPluginAsync = async (app) => {
 
   /**
    * GET /internal/reminders/overdue
-   * All tasks past their due date and not done. Service token required.
+   * All tasks past their due date and not done.
+   * Requires x-internal-key header matching INTERNAL_API_KEY env var.
    */
   app.get(
     '/internal/reminders/overdue',
-    { preHandler: [requireAuthOrApiToken] },
     async (request, reply) => {
-      if (request.apiTokenScope !== 'service') {
-        return reply.status(403).send({ error: 'Service token required' });
+      if (!isValidInternalKey(request.headers['x-internal-key'] as string | undefined)) {
+        return reply.status(403).send({ error: 'Forbidden' });
       }
 
       const now = new Date();

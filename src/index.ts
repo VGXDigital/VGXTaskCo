@@ -7,6 +7,7 @@ import Fastify from 'fastify';
 import helmet from '@fastify/helmet';
 import cors from '@fastify/cors';
 import sensible from '@fastify/sensible';
+import rateLimit from '@fastify/rate-limit';
 import { env } from './lib/env.js';
 import authRoutes from './routes/auth.js';
 import projectRoutes from './routes/projects.js';
@@ -54,6 +55,20 @@ await app.register(cors, {
 
 // ── HTTP utilities (httpErrors, etc.) ─────────────────────────────────────────
 await app.register(sensible);
+
+// ── Rate limiting ──────────────────────────────────────────────────────────────
+// Global permissive default: 300 req/min per IP.
+// Auth routes apply stricter per-route limits (see src/routes/auth.ts).
+await app.register(rateLimit, {
+  global: true,
+  max: 300,
+  timeWindow: '1 minute',
+  errorResponseBuilder(_request, context) {
+    return {
+      error: `Too many requests. Please try again in ${context.after}.`,
+    };
+  },
+});
 
 // ── Routes ─────────────────────────────────────────────────────────────────────
 await app.register(authRoutes, { prefix: '/auth' });

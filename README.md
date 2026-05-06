@@ -68,6 +68,13 @@ For VGX VPS: see [VPS Setup](prompts/VPS-SETUP.md) + GitHub Actions workflow in 
 - `listTasks` now returns tags (id, value, color) in each task result — `tagIds` filter no longer silently dropped
 - New `listTasksForProjects` service function for efficient cross-project queries
 - `gcTime: 10 * 60 * 1000` added to QueryClient for longer in-memory cache retention
+- Security: `GET /tasks/:id` route wired up — TaskDetailModal no longer 404s
+- Security: Rate limiting on auth endpoints (`@fastify/rate-limit`) — login 10/min, register 5/min, sso/exchange 10/min per IP, 300/min global default
+- Security: Webhook URL validation blocks SSRF — rejects localhost, private RFC1918 ranges, link-local, and non-HTTPS
+- Security: Internal reminders endpoints now protected by `INTERNAL_API_KEY` shared secret (`x-internal-key` header) — removes API token scope bypass vector
+- Security: SSO `/sso/exchange` returns 409 when email matches existing account — eliminates silent account takeover via OAuth email matching
+- Security: `console.error` in webhooks, audit, and activity services replaced with structured pino logger
+- Refactor: `RequestContext` interface deduplicated into `src/lib/types.ts`
 
 ### 0.1.0 (2026-05-06)
 

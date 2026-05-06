@@ -13,9 +13,28 @@ export const ALLOWED_WEBHOOK_EVENTS = [
   'test',
 ] as const;
 
+/**
+ * Validates that a webhook URL is a public HTTPS endpoint.
+ * Blocks localhost, loopback, link-local, and RFC1918 private ranges
+ * to prevent SSRF attacks against internal infrastructure.
+ */
+const publicHttpsUrl = z.string().url().refine((url) => {
+  try {
+    const parsed = new URL(url);
+    if (parsed.protocol !== 'https:') return false;
+    const h = parsed.hostname;
+    if (['localhost', '127.0.0.1', '0.0.0.0', '::1'].includes(h)) return false;
+    if (/^10\./.test(h) || /^192\.168\./.test(h) || /^172\.(1[6-9]|2\d|3[01])\./.test(h)) return false;
+    if (h === '169.254.169.254') return false;
+    return true;
+  } catch {
+    return false;
+  }
+}, 'Webhook URL must be a public HTTPS endpoint');
+
 export const createWebhookBodySchema = z
   .object({
-    url: z.string().url('Invalid webhook URL'),
+    url: publicHttpsUrl,
     events: z.array(z.enum(ALLOWED_WEBHOOK_EVENTS)).min(1, 'At least one event required'),
   })
   .strict();

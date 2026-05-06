@@ -2,6 +2,7 @@
 
 import { Prisma } from '@prisma/client';
 import { prisma } from '../lib/prisma.js';
+import { logger } from '../lib/logger.js';
 
 /**
  * Security audit logger. Never throws.
@@ -43,6 +44,6 @@ export async function recordAuditEvent(params: {
       },
     });
   } catch (err) {
-    console.error('[audit] Failed to record audit event:', err);
+    logger.error({ err }, '[audit] Failed to record audit event');
   }
 }
