@@ -10,6 +10,7 @@ import { setToken } from '../lib/auth'
 import { getSSOUrl } from '../lib/supabase'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
+import { VGXFooter } from '../components/layout/VGXFooter'
 
 const loginSchema = z.object({
   email: z.string().email('Enter a valid email'),
@@ -217,9 +218,9 @@ export function LoginPage({ onLogin }: LoginPageProps) {
         )}
       </div>
 
-      <p className="mt-6 text-xs text-gray-400 dark:text-gray-600">
-        © 2026 VGX Global Consulting (OPC) Private Limited
-      </p>
+      <div className="mt-6">
+        <VGXFooter />
+      </div>
     </div>
   )
 }
