@@ -19,6 +19,7 @@ build-report.md
 *.tsbuildinfo
 *.pem
 *.key
+scripts/
 prompts/INSTRUCTOR-NOTES.md
 
 # Feature matrix test artifacts
