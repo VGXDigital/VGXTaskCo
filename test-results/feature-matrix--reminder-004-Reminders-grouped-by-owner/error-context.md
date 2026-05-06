@@ -1,0 +1,226 @@
+# Instructions
+
+- Following Playwright test failed.
+- Explain why, be concise, respect Playwright best practices.
+- Provide a snippet of code with the fix, if possible.
+
+# Test info
+
+- Name: feature-matrix.spec.ts >> [reminder-004] Reminders grouped by owner
+- Location: tests/e2e/feature-matrix.spec.ts:256:7
+
+# Error details
+
+```
+Error: expect(received).toBe(expected) // Object.is equality
+
+Expected: 200
+Received: 404
+```
+
+# Test source
+
+```ts
+  1286 |       const res = await apiFetch('/webhooks', {
+  1287 |         method: 'POST',
+  1288 |         body: JSON.stringify({ url: 'https://example.com/hook', events: ['task.created'] }),
+  1289 |       });
+  1290 |       expect(res.status, `[${entry.id}] Create webhook expected 201`).toBe(201);
+  1291 |       const body = (await res.json()) as AnyJson;
+  1292 |       expect(body.data?.secret, `[${entry.id}] Secret must be in create response`).toBeTruthy();
+  1293 |       break;
+  1294 |     }
+  1295 | 
+  1296 |     case 'webhook-002': {
+  1297 |       await apiFetch('/webhooks', { method: 'POST', body: JSON.stringify({ url: 'https://example.com/hook', events: ['task.created'] }) });
+  1298 |       const res = await apiFetch('/webhooks');
+  1299 |       expect(res.status).toBe(200);
+  1300 |       const body = (await res.json()) as AnyJson;
+  1301 |       for (const w of body.data as AnyJson[]) {
+  1302 |         expect(w.secret, `[${entry.id}] Secret must not be in list response`).toBeUndefined();
+  1303 |       }
+  1304 |       break;
+  1305 |     }
+  1306 | 
+  1307 |     case 'webhook-003': {
+  1308 |       const createRes = await apiFetch('/webhooks', { method: 'POST', body: JSON.stringify({ url: 'https://example.com/hook', events: ['task.created'] }) });
+  1309 |       const createBody = (await createRes.json()) as AnyJson;
+  1310 |       const res = await apiFetch(`/webhooks/${createBody.data.id}/rotate-secret`, { method: 'POST' });
+  1311 |       expect(res.status, `[${entry.id}] Rotate secret expected 200`).toBe(200);
+  1312 |       const body = (await res.json()) as AnyJson;
+  1313 |       expect(body.data?.secret, `[${entry.id}] New secret must be in rotate response`).toBeTruthy();
+  1314 |       expect(body.data?.secret, `[${entry.id}] New secret must differ from original`).not.toBe(createBody.data.secret);
+  1315 |       break;
+  1316 |     }
+  1317 | 
+  1318 |     case 'webhook-004': {
+  1319 |       const createRes = await apiFetch('/webhooks', { method: 'POST', body: JSON.stringify({ url: 'https://example.com/hook', events: ['task.created'] }) });
+  1320 |       const createBody = (await createRes.json()) as AnyJson;
+  1321 |       const res = await apiFetch(`/webhooks/${createBody.data.id}/test`, { method: 'POST' });
+  1322 |       expect(res.status, `[${entry.id}] Webhook test expected 200`).toBe(200);
+  1323 |       const body = (await res.json()) as AnyJson;
+  1324 |       expect(body.data?.dispatched).toBe(true);
+  1325 |       break;
+  1326 |     }
+  1327 | 
+  1328 |     case 'webhook-009': {
+  1329 |       // Non-blocking dispatch — create a task with a webhook registered to a slow receiver
+  1330 |       // We can't easily set up a slow server here, so just time the PATCH response
+  1331 |       const proj = await createProject(`${prefix}-proj`);
+  1332 |       const task = await createTask(proj.id, `${prefix}-task`);
+  1333 |       const t0 = Date.now();
+  1334 |       await apiFetch(`/tasks/${task.id}`, { method: 'PATCH', body: JSON.stringify({ title: `${prefix}-updated` }) });
+  1335 |       const elapsed = Date.now() - t0;
+  1336 |       expect(elapsed, `[${entry.id}] PATCH /tasks/:id should respond within 2000ms`).toBeLessThan(2000);
+  1337 |       break;
+  1338 |     }
+  1339 | 
+  1340 |     // ── Reminders ─────────────────────────────────────────────────────────────────
+  1341 | 
+  1342 |     case 'reminder-001': {
+  1343 |       const createRes = await apiFetch('/api-tokens', { method: 'POST', body: JSON.stringify({ name: `${prefix}-svc`, scope: 'service' }) });
+  1344 |       const createBody = (await createRes.json()) as AnyJson;
+  1345 |       const rawToken = createBody.data?.rawToken ?? createBody.data?.token;
+  1346 |       const res = await fetch(`${BASE_URL}/reminders/due-today`, {
+  1347 |         headers: { Authorization: `Bearer ${rawToken as string}` },
+  1348 |       });
+  1349 |       expect(res.status, `[${entry.id}] GET /reminders/due-today expected 200`).toBe(200);
+  1350 |       break;
+  1351 |     }
+  1352 | 
+  1353 |     case 'reminder-002': {
+  1354 |       const createRes = await apiFetch('/api-tokens', { method: 'POST', body: JSON.stringify({ name: `${prefix}-svc`, scope: 'service' }) });
+  1355 |       const createBody = (await createRes.json()) as AnyJson;
+  1356 |       const rawToken = createBody.data?.rawToken ?? createBody.data?.token;
+  1357 |       const res = await fetch(`${BASE_URL}/reminders/overdue`, {
+  1358 |         headers: { Authorization: `Bearer ${rawToken as string}` },
+  1359 |       });
+  1360 |       expect(res.status, `[${entry.id}] GET /reminders/overdue expected 200`).toBe(200);
+  1361 |       break;
+  1362 |     }
+  1363 | 
+  1364 |     case 'reminder-003': {
+  1365 |       const createRes = await apiFetch('/api-tokens', { method: 'POST', body: JSON.stringify({ name: `${prefix}-user`, scope: 'user' }) });
+  1366 |       const createBody = (await createRes.json()) as AnyJson;
+  1367 |       const rawToken = createBody.data?.rawToken ?? createBody.data?.token;
+  1368 |       const res = await fetch(`${BASE_URL}/reminders/due-today`, {
+  1369 |         headers: { Authorization: `Bearer ${rawToken as string}` },
+  1370 |       });
+  1371 |       expect(res.status, `[${entry.id}] User-scope token on reminders expected 403`).toBe(403);
+  1372 |       break;
+  1373 |     }
+  1374 | 
+  1375 |     case 'reminder-004': {
+  1376 |       const createRes = await apiFetch('/api-tokens', { method: 'POST', body: JSON.stringify({ name: `${prefix}-svc`, scope: 'service' }) });
+  1377 |       const createBody = (await createRes.json()) as AnyJson;
+  1378 |       const rawToken = createBody.data?.rawToken ?? createBody.data?.token;
+  1379 |       const res = await fetch(`${BASE_URL}/reminders/due-today`, {
+  1380 |         headers: { Authorization: `Bearer ${rawToken as string}` },
+  1381 |       });
+  1382 |       if (res.ok) {
+  1383 |         const body = (await res.json()) as AnyJson;
+  1384 |         expect(body.data?.grouped, `[${entry.id}] Response should have grouped key`).toBeTruthy();
+  1385 |       } else {
+> 1386 |         expect(res.status).toBe(200);
+       |                            ^ Error: expect(received).toBe(expected) // Object.is equality
+  1387 |       }
+  1388 |       break;
+  1389 |     }
+  1390 | 
+  1391 |     // ── Search ────────────────────────────────────────────────────────────────────
+  1392 | 
+  1393 |     case 'search-001': {
+  1394 |       const uniqueName = `${prefix}-searchable-project-xyzzy`;
+  1395 |       await createProject(uniqueName);
+  1396 |       const res = await apiFetch(`/search?q=searchable-project-xyzzy`);
+  1397 |       expect(res.status, `[${entry.id}] GET /search expected 200`).toBe(200);
+  1398 |       const body = (await res.json()) as AnyJson;
+  1399 |       expect(body.data?.projects, `[${entry.id}] projects array expected`).toBeTruthy();
+  1400 |       const projectNames = (body.data.projects as AnyJson[]).map((p) => p.name as string);
+  1401 |       expect(projectNames.some((n) => n.includes('searchable-project-xyzzy')), `[${entry.id}] Project should appear in results`).toBe(true);
+  1402 |       break;
+  1403 |     }
+  1404 | 
+  1405 |     case 'search-002': {
+  1406 |       const proj = await createProject(`${prefix}-proj`);
+  1407 |       const uniqueTitle = `${prefix}-unique-task-qwerty`;
+  1408 |       await createTask(proj.id, uniqueTitle);
+  1409 |       const res = await apiFetch(`/search?q=unique-task-qwerty`);
+  1410 |       expect(res.status).toBe(200);
+  1411 |       const body = (await res.json()) as AnyJson;
+  1412 |       const taskTitles = (body.data.tasks as AnyJson[]).map((t) => t.title as string);
+  1413 |       expect(taskTitles.some((n) => n.includes('unique-task-qwerty')), `[${entry.id}] Task should appear in search`).toBe(true);
+  1414 |       break;
+  1415 |     }
+  1416 | 
+  1417 |     case 'search-003': {
+  1418 |       const other = await createTestUser(`${prefix}-b`);
+  1419 |       const otherUnique = `${prefix}-other-only-zzzz`;
+  1420 |       await createProject(otherUnique, other.token);
+  1421 |       const res = await apiFetch(`/search?q=other-only-zzzz`);
+  1422 |       expect(res.status).toBe(200);
+  1423 |       const body = (await res.json()) as AnyJson;
+  1424 |       expect((body.data.projects as AnyJson[]).length, `[${entry.id}] Cross-user project must not appear`).toBe(0);
+  1425 |       break;
+  1426 |     }
+  1427 | 
+  1428 |     case 'search-004': {
+  1429 |       const res = await apiFetch('/search?q=a');
+  1430 |       expect(res.status, `[${entry.id}] Single char query should return 400`).toBe(400);
+  1431 |       break;
+  1432 |     }
+  1433 | 
+  1434 |     case 'search-005': {
+  1435 |       const longQuery = 'a'.repeat(201);
+  1436 |       const res = await apiFetch(`/search?q=${longQuery}`);
+  1437 |       expect(res.status, `[${entry.id}] Too-long query should return 400`).toBe(400);
+  1438 |       break;
+  1439 |     }
+  1440 | 
+  1441 |     default: {
+  1442 |       console.warn(`[${entry.id}] No API test implementation — passing by default`);
+  1443 |       break;
+  1444 |     }
+  1445 |   }
+  1446 | }
+  1447 | 
+  1448 | // ═══════════════════════════════════════════════════════════════════════════════
+  1449 | // Executor: UI tests
+  1450 | // ═══════════════════════════════════════════════════════════════════════════════
+  1451 | 
+  1452 | // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  1453 | async function runUiTest(entry: MatrixEntry, page: import('@playwright/test').Page): Promise<void> {
+  1454 |   const auth = loadAuthState();
+  1455 | 
+  1456 |   // Inject auth state into the browser before navigating
+  1457 |   await page.goto(`${FRONTEND_URL}/login`, { waitUntil: 'domcontentloaded' });
+  1458 |   await page.evaluate((token: string) => {
+  1459 |     localStorage.setItem('vgxt-token', token);
+  1460 |   }, auth.token);
+  1461 | 
+  1462 |   switch (entry.id) {
+  1463 | 
+  1464 |     case 'fe-001': {
+  1465 |       await page.goto(`${FRONTEND_URL}/`, { waitUntil: 'networkidle' });
+  1466 |       // Look for theme toggle button
+  1467 |       const toggle = page.locator('[data-testid="theme-toggle"], button[aria-label*="theme"], button[aria-label*="dark"], button[aria-label*="light"]').first();
+  1468 |       await toggle.waitFor({ timeout: 5000 }).catch(() => {
+  1469 |         // Theme toggle may be in different location
+  1470 |       });
+  1471 |       // Check localStorage persistence
+  1472 |       const theme = await page.evaluate(() => localStorage.getItem('vgxt-dark'));
+  1473 |       // Theme key may be null initially — just verify the page loaded without error
+  1474 |       expect(page.url(), `[${entry.id}] Should be on app page`).toContain(FRONTEND_URL);
+  1475 |       void theme; // used for potential assertion in real run
+  1476 |       break;
+  1477 |     }
+  1478 | 
+  1479 |     case 'fe-002': {
+  1480 |       await page.goto(`${FRONTEND_URL}/`, { waitUntil: 'networkidle' });
+  1481 |       // Look for sidebar views — expect at least 3 saved view items
+  1482 |       const viewItems = page.locator('[data-testid="saved-view-item"], [data-view-item], nav a[href*="view"]');
+  1483 |       await page.waitForTimeout(1000); // allow React to render
+  1484 |       const count = await viewItems.count();
+  1485 |       expect(count, `[${entry.id}] Expected at least 3 default view items in sidebar`).toBeGreaterThanOrEqual(3);
+  1486 |       break;
+```

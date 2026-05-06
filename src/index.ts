@@ -21,6 +21,7 @@ import webhooks from './routes/webhooks.js';
 import exportRoutes from './routes/export.js';
 import reminders from './routes/reminders.js';
 import search from './routes/search.js';
+import taskParse from './routes/tasks-parse.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const { version: APP_VERSION } = JSON.parse(readFileSync(join(__dirname, '../package.json'), 'utf-8')) as { version: string };
@@ -50,6 +51,7 @@ await app.register(cors, {
   origin: env.ALLOWED_FRONTEND_ORIGINS
     ? env.ALLOWED_FRONTEND_ORIGINS.split(',').map((s) => s.trim())
     : false,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   credentials: true,
 });
 
@@ -83,6 +85,7 @@ await app.register(webhooks);
 await app.register(exportRoutes);
 await app.register(reminders);
 await app.register(search);
+await app.register(taskParse);
 
 // ── Health check ───────────────────────────────────────────────────────────────
 app.get('/', async (_request, _reply) => {

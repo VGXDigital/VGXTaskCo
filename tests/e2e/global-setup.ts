@@ -20,7 +20,8 @@ export interface AuthState {
   email: string;
 }
 
-const BASE_URL = process.env['E2E_BASE_URL'] ?? 'http://localhost:4000';
+const isProd = (process.env['E2E_ENV'] ?? 'prod') === 'prod';
+const BASE_URL = process.env['E2E_BASE_URL'] ?? (isProd ? 'https://vgxtaskco-api.fly.dev' : 'http://localhost:4000');
 const AUTH_STATE_PATH = resolve(__dirname, '.auth-state.json');
 
 async function globalSetup(): Promise<void> {

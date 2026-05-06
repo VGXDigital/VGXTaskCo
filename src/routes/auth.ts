@@ -260,6 +260,16 @@ const authRoutes: FastifyPluginAsync = async (app) => {
     const { id, email, name } = request.user;
     return reply.status(200).send({ data: { id, email, name } });
   });
+
+  /**
+   * DELETE /auth/me
+   * Permanently deletes the authenticated user and all their data (cascade).
+   * Used by E2E teardown to clean up ephemeral test users.
+   */
+  app.delete('/me', { preHandler: [requireAuth] }, async (request, reply) => {
+    await prisma.user.delete({ where: { id: request.user.id } });
+    return reply.status(204).send();
+  });
 };
 
 export default authRoutes;

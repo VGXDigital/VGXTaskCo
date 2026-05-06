@@ -40,9 +40,9 @@ export function useCreateTask(projectId: string) {
 
 export function useUpdateTask() {
   const qc = useQueryClient()
-  return useMutation<ApiResponse<Task>, Error, { id: string; projectId: string; data: Partial<Task> }>({
+  return useMutation<Task, Error, { id: string; projectId: string; data: { title?: string; description?: string; status?: string; priority?: string; dueDate?: string | null; archivedAt?: string | null } }>({
     mutationFn: ({ id, data }) =>
-      apiClient.patch<ApiResponse<Task>>(`/tasks/${id}`, data),
+      apiClient.patch<Task>(`/tasks/${id}`, data),
     onSuccess: (_data, variables) => {
       void qc.invalidateQueries({ queryKey: ['task', variables.id] })
       void qc.invalidateQueries({ queryKey: ['tasks', variables.projectId] })

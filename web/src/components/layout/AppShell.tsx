@@ -63,7 +63,7 @@ export function AppShell({
   }
 
   const sidebarVariants = {
-    open: { width: 240, opacity: 1, x: 0 },
+    open: { width: 280, opacity: 1, x: 0 },
     closed: { width: 0, opacity: 0, x: -20 },
   }
 
@@ -71,12 +71,12 @@ export function AppShell({
     {
       label: 'Dashboard',
       route: { page: 'dashboard' },
-      icon: <LayoutDashboard className="h-4 w-4" />,
+      icon: <LayoutDashboard className="h-5 w-5" />,
     },
     {
       label: 'Projects',
       route: { page: 'projects' },
-      icon: <FolderKanban className="h-4 w-4" />,
+      icon: <FolderKanban className="h-5 w-5" />,
     },
   ]
 
@@ -128,7 +128,7 @@ export function AppShell({
                     <button
                       onClick={() => onNavigate(item.route)}
                       className={[
-                        'flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
+                        'flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-base font-medium transition-colors',
                         currentPage === item.route.page
                           ? 'bg-primary/10 text-primary dark:bg-primary/20'
                           : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800',
@@ -277,7 +277,7 @@ export function AppShell({
         </header>
 
         {/* Content */}
-        <main className="flex-1 overflow-y-auto p-6">{children}</main>
+        <main className="flex-1 overflow-y-auto px-8 py-6">{children}</main>
       </div>
     </div>
   )

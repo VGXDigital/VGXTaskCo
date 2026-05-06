@@ -63,13 +63,13 @@ export function DashboardPage({ onNavigateToProject }: DashboardPageProps) {
   }
 
   return (
-    <div className="max-w-3xl">
-      <div className="mb-6 flex items-start justify-between">
+    <div className="max-w-5xl">
+      <div className="mb-8 flex items-start justify-between">
         <div>
-          <h1 className="mb-1 text-2xl font-bold text-gray-900 dark:text-gray-100">
+          <h1 className="mb-1 text-3xl font-bold text-gray-900 dark:text-gray-100">
             Welcome{me?.name ? `, ${me.name}` : ''}
           </h1>
-          <p className="text-gray-500 dark:text-gray-400">Here's an overview of your workspace.</p>
+          <p className="text-base text-gray-500 dark:text-gray-400">Here's an overview of your workspace.</p>
         </div>
         {firstProjectId && (
           <Button onClick={() => setQuickAddOpen(true)} size="sm">
@@ -105,7 +105,7 @@ export function DashboardPage({ onNavigateToProject }: DashboardPageProps) {
       {/* Recent projects */}
       {recentProjects.length > 0 && (
         <div className="mt-8">
-          <h2 className="mb-3 text-base font-semibold text-gray-900 dark:text-gray-100">
+          <h2 className="mb-4 text-lg font-semibold text-gray-900 dark:text-gray-100">
             Recent Projects
           </h2>
           <ul className="space-y-2">
@@ -113,13 +113,13 @@ export function DashboardPage({ onNavigateToProject }: DashboardPageProps) {
               <li key={project.id}>
                 <button
                   onClick={() => onNavigateToProject(project.id)}
-                  className="flex w-full items-center gap-3 rounded-lg bg-white p-4 text-left shadow-sm ring-1 ring-gray-200 transition-all hover:shadow-md dark:bg-gray-900 dark:ring-gray-800"
+                  className="flex w-full items-center gap-4 rounded-xl bg-white p-5 text-left shadow-sm ring-1 ring-gray-200 transition-all hover:shadow-md dark:bg-gray-900 dark:ring-gray-800"
                 >
                   <span
-                    className="h-3 w-3 flex-shrink-0 rounded-full"
+                    className="h-4 w-4 flex-shrink-0 rounded-full"
                     style={{ backgroundColor: project.color }}
                   />
-                  <span className="flex-1 font-medium text-gray-800 dark:text-gray-200">
+                  <span className="flex-1 text-base font-medium text-gray-800 dark:text-gray-200">
                     {project.name}
                   </span>
                   {project.description && (
@@ -163,20 +163,20 @@ function StatCard({
   danger?: boolean
 }) {
   return (
-    <div className="flex items-center gap-4 rounded-xl bg-white p-5 shadow-sm ring-1 ring-gray-200 dark:bg-gray-900 dark:ring-gray-800">
-      <div className={['flex h-10 w-10 items-center justify-center rounded-lg', iconBg].join(' ')}>
+    <div className="flex items-center gap-5 rounded-xl bg-white p-6 shadow-sm ring-1 ring-gray-200 dark:bg-gray-900 dark:ring-gray-800">
+      <div className={['flex h-12 w-12 items-center justify-center rounded-xl', iconBg].join(' ')}>
         {icon}
       </div>
       <div>
         <p
           className={[
-            'text-2xl font-bold',
+            'text-3xl font-bold',
             danger ? 'text-red-600 dark:text-red-400' : 'text-gray-900 dark:text-gray-100',
           ].join(' ')}
         >
           {value}
         </p>
-        <p className="text-sm text-gray-500 dark:text-gray-400">{label}</p>
+        <p className="text-base text-gray-500 dark:text-gray-400">{label}</p>
       </div>
     </div>
   )

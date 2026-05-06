@@ -2,13 +2,20 @@
 
 import { defineConfig } from '@playwright/test';
 
+const isProd = (process.env['E2E_ENV'] ?? 'prod') === 'prod';
+
+export const E2E_GUI_URL = isProd ? 'https://taskco.vgx.guru' : 'http://localhost:5173';
+export const E2E_API_URL = isProd ? 'https://vgxtaskco-api.fly.dev' : 'http://localhost:4000';
+
 export default defineConfig({
   testDir: 'tests/e2e',
   timeout: 30000,
   workers: 1, // serial — shared DB
   use: {
-    baseURL: 'http://localhost:5173',
+    baseURL: E2E_GUI_URL,
     headless: true,
+    channel: 'msedge',
   },
   globalSetup: './tests/e2e/global-setup.ts',
+  globalTeardown: './tests/e2e/global-teardown.ts',
 });

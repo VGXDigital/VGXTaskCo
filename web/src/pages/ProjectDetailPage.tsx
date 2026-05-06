@@ -1,6 +1,9 @@
 // Copyright (c) 2026 VGX Global Consulting (OPC) Private Limited. All rights reserved.
 
-import { useCallback, useDeferredValue, useMemo, useRef, useState } from 'react'
+import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react'
+import { DndContext, MouseSensor, TouchSensor, useSensor, useSensors, useDroppable, useDraggable, DragOverlay } from '@dnd-kit/core'
+import type { DragEndEvent, DragStartEvent } from '@dnd-kit/core'
+import { CSS } from '@dnd-kit/utilities'
 import { ArrowLeft, BookmarkPlus, ChevronDown, Edit2, Plus, Search } from 'lucide-react'
 import { ExportButton } from '../components/export/ExportButton'
 import * as Popover from '@radix-ui/react-popover'
@@ -9,7 +12,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { toast } from 'sonner'
 import { useProject, useUpdateProject } from '../hooks/useProjects'
-import { useTasks } from '../hooks/useTasks'
+import { useTasks, useUpdateTask } from '../hooks/useTasks'
 import { buildTaskQueryString } from '../lib/query'
 import { useProjectViews, useCreateView } from '../hooks/useViews'
 import { TaskCard } from '../components/tasks/TaskCard'
@@ -37,6 +40,72 @@ const editSchema = z.object({
 type EditForm = z.infer<typeof editSchema>
 
 const PRESET_COLORS = ['#3b82f6', '#8b5cf6', '#10b981', '#f59e0b', '#ef4444', '#ec4899']
+
+function DraggableCard({ task, onClick }: { task: Task; onClick: () => void }) {
+  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({ id: task.id })
+  return (
+    <div
+      ref={setNodeRef}
+      {...listeners}
+      {...attributes}
+      style={{ transform: CSS.Translate.toString(transform), opacity: isDragging ? 0.4 : 1 }}
+      className="touch-none"
+    >
+      <TaskCard task={task} onClick={onClick} />
+    </div>
+  )
+}
+
+function KanbanColumn({
+  status, label, tasks, onAddTask, onTaskClick,
+}: {
+  status: string; label: string; tasks: Task[]; onAddTask: () => void; onTaskClick: (id: string) => void
+}) {
+  const { setNodeRef, isOver } = useDroppable({ id: status })
+  return (
+    <div
+      ref={setNodeRef}
+      className={`flex flex-col rounded-xl p-3 ring-1 transition-colors ${
+        isOver
+          ? 'bg-primary/5 ring-primary/30 dark:bg-primary/10'
+          : 'bg-gray-50 ring-gray-200 dark:bg-gray-900/50 dark:ring-gray-800'
+      }`}
+    >
+      <div className="mb-3 flex items-center justify-between">
+        <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+          {label}
+          <span className="ml-1.5 rounded-full bg-gray-200 px-1.5 py-0.5 text-xs font-normal text-gray-500 dark:bg-gray-700 dark:text-gray-400">
+            {tasks.length}
+          </span>
+        </span>
+        <button
+          onClick={onAddTask}
+          className="rounded p-1 text-gray-400 hover:bg-gray-200 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-200"
+          aria-label={`Add task to ${label}`}
+        >
+          <Plus className="h-4 w-4" />
+        </button>
+      </div>
+
+      <div className="flex flex-col gap-2">
+        {tasks.map((task) => (
+          <DraggableCard key={task.id} task={task} onClick={() => onTaskClick(task.id)} />
+        ))}
+        {tasks.length === 0 && (
+          <p className="py-4 text-center text-xs text-gray-400 dark:text-gray-600">No tasks</p>
+        )}
+      </div>
+
+      <button
+        onClick={onAddTask}
+        className="mt-3 flex w-full items-center gap-1.5 rounded-lg px-2 py-1.5 text-xs text-gray-400 transition-colors hover:bg-gray-200 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-300"
+      >
+        <Plus className="h-3.5 w-3.5" />
+        Add task
+      </button>
+    </div>
+  )
+}
 
 function EditProjectModal({
   projectId,
@@ -133,6 +202,30 @@ export function ProjectDetailPage({ projectId, onBack }: ProjectDetailPageProps)
     includeArchived,
   })
 
+  const updateTask = useUpdateTask()
+  const [activeTaskId, setActiveTaskId] = useState<string | null>(null)
+  const sensors = useSensors(
+    useSensor(MouseSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 5 } }),
+  )
+
+  function handleDragStart(event: DragStartEvent) {
+    setActiveTaskId(String(event.active.id))
+  }
+
+  function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event
+    if (!over) return
+    const taskId = String(active.id)
+    const newStatus = String(over.id) as TaskStatus
+    const validStatuses: TaskStatus[] = ['TODO', 'IN_PROGRESS', 'DONE']
+    if (!validStatuses.includes(newStatus)) return
+    const task = tasks.find(t => t.id === taskId)
+    if (!task || task.status === newStatus) return
+    updateTask.mutate({ id: taskId, data: { status: newStatus }, projectId })
+    setActiveTaskId(null)
+  }
+
   const { data: projectViews = [] } = useProjectViews(projectId)
   const createView = useCreateView()
   const [viewsOpen, setViewsOpen] = useState(false)
@@ -169,6 +262,17 @@ export function ProjectDetailPage({ projectId, onBack }: ProjectDetailPageProps)
   const [createStatus, setCreateStatus] = useState<TaskStatus | null>(null)
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null)
   const [editOpen, setEditOpen] = useState(false)
+
+  // N shortcut opens new task modal (skip if typing in an input)
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      const tag = (e.target as HTMLElement).tagName
+      if (['INPUT', 'TEXTAREA', 'SELECT'].includes(tag)) return
+      if (e.key === 'n' || e.key === 'N') setCreateStatus('TODO')
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
 
   const tasksByStatus = useMemo(() => {
     const map: Record<TaskStatus, Task[]> = { TODO: [], IN_PROGRESS: [], DONE: [] }
@@ -385,47 +489,26 @@ export function ProjectDetailPage({ projectId, onBack }: ProjectDetailPageProps)
           <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-          {COLUMNS.map(({ status, label }) => (
-            <div
-              key={status}
-              className="flex flex-col rounded-xl bg-gray-50 p-3 ring-1 ring-gray-200 dark:bg-gray-900/50 dark:ring-gray-800"
-            >
-              {/* Column header */}
-              <div className="mb-3 flex items-center justify-between">
-                <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-                  {label}
-                  <span className="ml-1.5 rounded-full bg-gray-200 px-1.5 py-0.5 text-xs font-normal text-gray-500 dark:bg-gray-700 dark:text-gray-400">
-                    {tasksByStatus[status].length}
-                  </span>
-                </span>
-                <button
-                  onClick={() => setCreateStatus(status)}
-                  className="rounded p-1 text-gray-400 hover:bg-gray-200 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-200"
-                  aria-label={`Add task to ${label}`}
-                >
-                  <Plus className="h-4 w-4" />
-                </button>
-              </div>
-
-              {/* Tasks */}
-              <div className="flex flex-col gap-2">
-                {tasksByStatus[status].map((task) => (
-                  <TaskCard
-                    key={task.id}
-                    task={task}
-                    onClick={() => handleTaskClick(task.id)}
-                  />
-                ))}
-                {tasksByStatus[status].length === 0 && (
-                  <p className="py-6 text-center text-xs text-gray-400 dark:text-gray-600">
-                    No tasks
-                  </p>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
+        <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+            {COLUMNS.map(({ status, label }) => (
+              <KanbanColumn
+                key={status}
+                status={status}
+                label={label}
+                tasks={tasksByStatus[status]}
+                onAddTask={() => setCreateStatus(status)}
+                onTaskClick={handleTaskClick}
+              />
+            ))}
+          </div>
+          <DragOverlay>
+            {activeTaskId && (() => {
+              const t = tasks.find(t => t.id === activeTaskId)
+              return t ? <div className="rotate-1 opacity-90"><TaskCard task={t} onClick={() => {}} /></div> : null
+            })()}
+          </DragOverlay>
+        </DndContext>
       )}
 
       {/* Modals */}

@@ -1210,6 +1210,56 @@
     "description": "GET /search?q=<200+ chars> returns 400 with a validation error about maximum query length."
   },
   {
+    "id": "kanban-001",
+    "category": "Kanban board",
+    "feature": "Three columns rendered for TODO, IN_PROGRESS, DONE",
+    "surface": "frontend",
+    "verifyType": "ui",
+    "criticality": "critical",
+    "endpoint": null,
+    "description": "The project detail page in kanban view renders exactly 3 columns labelled TODO, In Progress, and Done. Each column heading is visible on the page."
+  },
+  {
+    "id": "kanban-002",
+    "category": "Kanban board",
+    "feature": "Task card appears in correct column based on status",
+    "surface": "frontend",
+    "verifyType": "ui",
+    "criticality": "critical",
+    "endpoint": null,
+    "description": "A task created with status=TODO appears in the TODO column. A task with status=DONE appears in the DONE column. Tasks do not appear in the wrong column."
+  },
+  {
+    "id": "kanban-003",
+    "category": "Kanban board",
+    "feature": "Drag task to new column fires PATCH and moves card",
+    "surface": "frontend",
+    "verifyType": "ui",
+    "criticality": "critical",
+    "endpoint": null,
+    "description": "Dragging a TODO task card into the IN_PROGRESS column calls PATCH /tasks/:id with { status: 'IN_PROGRESS' } and the card appears in the IN_PROGRESS column after the drop."
+  },
+  {
+    "id": "kanban-004",
+    "category": "Kanban board",
+    "feature": "Column task count badge updates after drag",
+    "surface": "frontend",
+    "verifyType": "ui",
+    "criticality": "important",
+    "endpoint": null,
+    "description": "After dragging a task from TODO to DONE, the numeric badge on the TODO column decrements by 1 and the DONE column badge increments by 1."
+  },
+  {
+    "id": "kanban-005",
+    "category": "Kanban board",
+    "feature": "Drop on same column is a no-op",
+    "surface": "frontend",
+    "verifyType": "ui",
+    "criticality": "important",
+    "endpoint": null,
+    "description": "Dragging a task and dropping it back into its own column does not call PATCH /tasks/:id and the task count remains unchanged."
+  },
+  {
     "id": "fe-001",
     "category": "Frontend wiring",
     "feature": "Dark/light mode toggle cycles and persists",
@@ -1338,6 +1388,36 @@
     "criticality": "important",
     "endpoint": null,
     "description": "The page's computed font-family for heading elements includes 'Montserrat' and for body text includes 'Ubuntu'."
+  },
+  {
+    "id": "parse-001",
+    "category": "AI task parsing",
+    "feature": "Valid text returns structured parsed task",
+    "surface": "backend",
+    "verifyType": "api",
+    "criticality": "critical",
+    "endpoint": "POST /tasks/parse",
+    "description": "POST /tasks/parse with { text: 'Review ICA report tomorrow, high priority' } returns 200 { data: { title: string, dueDate: 'YYYY-MM-DD' | null, priority: 'HIGH' | null, description: string | null } }. title must be a non-empty string."
+  },
+  {
+    "id": "parse-002",
+    "category": "AI task parsing",
+    "feature": "Returns 503 when GROQ_API_KEY not configured",
+    "surface": "backend",
+    "verifyType": "api",
+    "criticality": "critical",
+    "endpoint": "POST /tasks/parse",
+    "description": "When GROQ_API_KEY is not set in the environment, POST /tasks/parse returns 503 { error: 'AI parsing not configured' }. This is skipped if the key is present in the test environment."
+  },
+  {
+    "id": "parse-003",
+    "category": "AI task parsing",
+    "feature": "Text over 500 chars returns 400",
+    "surface": "backend",
+    "verifyType": "api",
+    "criticality": "important",
+    "endpoint": "POST /tasks/parse",
+    "description": "POST /tasks/parse with text longer than 500 characters returns 400 { error: 'text is required (max 500 chars)' }."
   },
   {
     "id": "brand-004",
