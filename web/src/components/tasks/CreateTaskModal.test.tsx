@@ -115,9 +115,9 @@ describe('CreateTaskModal — renders smart input', () => {
     expect(screen.getAllByText('Medium').length).toBeGreaterThan(0)
   })
 
-  it('renders the Create task and Cancel buttons', () => {
+  it('renders the Add task and Cancel buttons', () => {
     renderModal()
-    expect(screen.getByRole('button', { name: /create task/i })).toBeTruthy()
+    expect(screen.getByRole('button', { name: /add task/i })).toBeTruthy()
     expect(screen.getByRole('button', { name: /cancel/i })).toBeTruthy()
   })
 })
@@ -186,7 +186,7 @@ describe('CreateTaskModal — smart input debounce and parse', () => {
     expect(titleInput.value).toBe('Fix login bug')
   })
 
-  it('shows priority and due date detection chips after successful parse', async () => {
+  it('updates the priority pill to High after successful parse', async () => {
     vi.useFakeTimers()
     mockPost.mockResolvedValue({
       title: 'Fix login bug',
@@ -208,13 +208,14 @@ describe('CreateTaskModal — smart input debounce and parse', () => {
       await Promise.resolve()
     })
 
-    // The chip text is "high priority" — find the span chip, not the textarea
-    const priorityChips = document.querySelectorAll('span.rounded-full')
-    const priorityChipTexts = Array.from(priorityChips).map((el) => el.textContent?.trim().toLowerCase())
-    expect(priorityChipTexts.some((t) => t?.includes('high') && t?.includes('priority'))).toBe(true)
+    // After parse the priority pill button should show "High"
+    const priorityButtons = screen.getAllByRole('button')
+    const priorityPill = priorityButtons.find((b) => b.textContent?.includes('High'))
+    expect(priorityPill).toBeTruthy()
 
-    const dueChips = Array.from(priorityChips).filter((el) => el.textContent?.toLowerCase().includes('due'))
-    expect(dueChips.length).toBeGreaterThan(0)
+    // The date pill button should now show a formatted date (not "Date")
+    const datePill = priorityButtons.find((b) => b.textContent?.match(/jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec/i))
+    expect(datePill).toBeTruthy()
   })
 })
 
@@ -261,7 +262,7 @@ describe('CreateTaskModal — parse error fallback', () => {
     })
 
     // Modal is still rendered
-    expect(screen.getByRole('button', { name: /create task/i })).toBeTruthy()
+    expect(screen.getByRole('button', { name: /add task/i })).toBeTruthy()
   })
 })
 
@@ -309,20 +310,19 @@ describe('CreateTaskModal — ⌘+Enter submits form', () => {
 })
 
 describe('CreateTaskModal — normal form submission', () => {
-  it('renders title and due date fields', () => {
+  it('renders title field and date pill', () => {
     renderModal()
     expect(screen.getByLabelText(/title/i)).toBeTruthy()
-    expect(screen.getByLabelText(/due date/i)).toBeTruthy()
+    // Due date is a pill button (no traditional label) — verify the pill is present
+    const buttons = screen.getAllByRole('button')
+    const datePill = buttons.find((b) => b.textContent?.trim() === 'Date')
+    expect(datePill).toBeTruthy()
   })
 
-  it('shows validation error when title is empty and form is submitted', async () => {
+  it('disables the Add task button when title is empty', () => {
     renderModal()
-    const submitBtn = screen.getByRole('button', { name: /create task/i })
-    fireEvent.click(submitBtn)
-
-    await waitFor(() => {
-      expect(screen.getByText(/title is required/i)).toBeTruthy()
-    })
+    const submitBtn = screen.getByRole('button', { name: /add task/i })
+    expect(submitBtn).toHaveProperty('disabled', true)
   })
 
   it('calls create mutation with correct payload when form is valid', async () => {
@@ -333,7 +333,7 @@ describe('CreateTaskModal — normal form submission', () => {
     const titleInput = screen.getByLabelText(/title/i)
     fireEvent.change(titleInput, { target: { value: 'My new task' } })
 
-    const submitBtn = screen.getByRole('button', { name: /create task/i })
+    const submitBtn = screen.getByRole('button', { name: /add task/i })
     fireEvent.click(submitBtn)
 
     await waitFor(() => {
@@ -379,8 +379,8 @@ describe('CreateTaskModal — modal reset on open', () => {
     expect(titleInput.value).toBe('')
   })
 
-  it('renders the modal with "New Task" title', () => {
+  it('renders the smart textarea after opening', () => {
     renderModal()
-    expect(screen.getByText('New Task')).toBeTruthy()
+    expect(screen.getByPlaceholderText(/describe your task/i)).toBeTruthy()
   })
 })

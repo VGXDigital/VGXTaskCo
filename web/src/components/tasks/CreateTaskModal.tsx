@@ -346,6 +346,7 @@ export function CreateTaskModal({
             type="text"
             placeholder="Task name"
             autoComplete="off"
+            aria-label="Title"
             {...register('title')}
             className="w-full bg-transparent text-[1.05rem] font-semibold text-gray-900 placeholder-gray-300 outline-none dark:text-gray-100 dark:placeholder-gray-600"
           />
