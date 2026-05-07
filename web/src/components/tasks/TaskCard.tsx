@@ -30,8 +30,6 @@ function isOverdue(task: Task): boolean {
 
 export function TaskCard({ task, onClick }: TaskCardProps) {
   const overdue = isOverdue(task)
-  const visibleTags = task.tags?.slice(0, 3) ?? []
-  const overflow = (task.tags?.length ?? 0) - 3
 
   return (
     <motion.div
@@ -68,25 +66,6 @@ export function TaskCard({ task, onClick }: TaskCardProps) {
           </span>
         )}
       </div>
-
-      {/* Tags */}
-      {visibleTags.length > 0 && (
-        <div className="mt-2 flex flex-wrap gap-1">
-          {visibleTags.map((tag) => (
-            <span
-              key={tag.id}
-              className="rounded-full bg-primary/10 px-2 py-0.5 text-xs text-primary dark:bg-primary/20"
-            >
-              {tag.value}
-            </span>
-          ))}
-          {overflow > 0 && (
-            <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-500 dark:bg-gray-700 dark:text-gray-400">
-              +{overflow} more
-            </span>
-          )}
-        </div>
-      )}
     </motion.div>
   )
 }

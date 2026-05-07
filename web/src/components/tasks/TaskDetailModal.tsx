@@ -2,20 +2,18 @@
 
 import { useEffect, useRef, useState } from 'react'
 import * as Dialog from '@radix-ui/react-dialog'
-import * as Popover from '@radix-ui/react-popover'
 import { AnimatePresence, motion } from 'framer-motion'
 import { toast } from 'sonner'
 import { format, parseISO } from 'date-fns'
-import { Archive, ArchiveRestore, Send, Tag, Trash2, X } from 'lucide-react'
+import { Archive, ArchiveRestore, Trash2, X } from 'lucide-react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { apiClient } from '../../lib/api-client'
 import { useUpdateTask, useDeleteTask } from '../../hooks/useTasks'
-import { useTags, useAttachTags } from '../../hooks/useTags'
 import { Badge } from '../ui/Badge'
 import { Button } from '../ui/Button'
 import { Select } from '../ui/Select'
 import { Modal } from '../ui/Modal'
-import type { Comment, Priority, Task, TaskStatus } from '../../types'
+import type { Priority, Task, TaskStatus } from '../../types'
 
 interface TaskDetailModalProps {
   taskId: string
@@ -46,25 +44,6 @@ function useTask(id: string) {
     queryKey: ['task', id],
     queryFn: () => apiClient.get<Task>(`/tasks/${id}`),
     enabled: Boolean(id),
-  })
-}
-
-function useTaskComments(taskId: string) {
-  return useQuery<Comment[]>({
-    queryKey: ['task-comments', taskId],
-    queryFn: () => apiClient.get<Comment[]>(`/tasks/${taskId}/comments`),
-    enabled: Boolean(taskId),
-  })
-}
-
-function useAddComment(taskId: string) {
-  const qc = useQueryClient()
-  return useMutation<unknown, Error, { body: string }>({
-    mutationFn: (body) => apiClient.post<unknown>(`/tasks/${taskId}/comments`, body),
-    onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: ['task-comments', taskId] })
-    },
-    onError: (err) => toast.error(err.message),
   })
 }
 
@@ -129,90 +108,12 @@ function InlineTitle({ value, onSave }: InlineTitleProps) {
   )
 }
 
-interface TagsPopoverProps {
-  taskId: string
-  currentTagIds: string[]
-}
-
-function TagsPopover({ taskId, currentTagIds }: TagsPopoverProps) {
-  const { data: allTags = [] } = useTags()
-  const attachTags = useAttachTags(taskId)
-  const [selected, setSelected] = useState<Set<string>>(new Set(currentTagIds))
-  const [open, setOpen] = useState(false)
-
-  useEffect(() => {
-    setSelected(new Set(currentTagIds))
-  }, [currentTagIds, open])
-
-  function toggle(id: string) {
-    setSelected((prev) => {
-      const next = new Set(prev)
-      if (next.has(id)) next.delete(id)
-      else next.add(id)
-      return next
-    })
-  }
-
-  async function save() {
-    try {
-      await attachTags.mutateAsync({ tagIds: Array.from(selected) })
-      setOpen(false)
-    } catch {
-      // already toasted
-    }
-  }
-
-  return (
-    <Popover.Root open={open} onOpenChange={setOpen}>
-      <Popover.Trigger asChild>
-        <button className="flex items-center gap-1.5 rounded-md border border-dashed border-gray-300 px-2.5 py-1 text-xs text-gray-500 hover:border-primary hover:text-primary dark:border-gray-600 dark:text-gray-400">
-          <Tag className="h-3 w-3" />
-          Add tag
-        </button>
-      </Popover.Trigger>
-      <Popover.Portal>
-        <Popover.Content
-          className="z-[300] w-56 rounded-lg border border-gray-200 bg-white p-3 shadow-lg dark:border-gray-700 dark:bg-gray-800"
-          sideOffset={4}
-        >
-          {allTags.length === 0 ? (
-            <p className="text-xs text-gray-500 dark:text-gray-400">No tags yet.</p>
-          ) : (
-            <ul className="mb-3 space-y-1">
-              {allTags.map((tag) => (
-                <li key={tag.id}>
-                  <label className="flex cursor-pointer items-center gap-2 rounded px-1 py-0.5 text-sm hover:bg-gray-50 dark:hover:bg-gray-700">
-                    <input
-                      type="checkbox"
-                      checked={selected.has(tag.id)}
-                      onChange={() => toggle(tag.id)}
-                      className="accent-primary"
-                    />
-                    <span className="text-gray-700 dark:text-gray-300">{tag.value}</span>
-                  </label>
-                </li>
-              ))}
-            </ul>
-          )}
-          <Button size="sm" className="w-full" onClick={save} loading={attachTags.isPending}>
-            Save
-          </Button>
-          <Popover.Arrow className="fill-white dark:fill-gray-800" />
-        </Popover.Content>
-      </Popover.Portal>
-    </Popover.Root>
-  )
-}
-
 export function TaskDetailModal({ taskId, open, onClose }: TaskDetailModalProps) {
   const { data: task, isLoading } = useTask(taskId)
-  const { data: comments = [] } = useTaskComments(taskId)
   const updateTask = useUpdateTask()
   const deleteTask = useDeleteTask()
   const archiveTask = useArchiveTask()
-  const addComment = useAddComment(taskId)
 
-  const [commentBody, setCommentBody] = useState('')
   const [descDraft, setDescDraft] = useState('')
   const [confirmDelete, setConfirmDelete] = useState(false)
 
@@ -252,16 +153,6 @@ export function TaskDetailModal({ taskId, open, onClose }: TaskDetailModalProps)
     try {
       await archiveTask.mutateAsync({ id: task.id, archive })
       toast.success(archive ? 'Task archived' : 'Task restored')
-    } catch {
-      // already toasted
-    }
-  }
-
-  async function handleSendComment() {
-    if (!commentBody.trim()) return
-    try {
-      await addComment.mutateAsync({ body: commentBody.trim() })
-      setCommentBody('')
     } catch {
       // already toasted
     }
@@ -402,80 +293,6 @@ export function TaskDetailModal({ taskId, open, onClose }: TaskDetailModalProps)
                             placeholder="Add a description…"
                             className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder-gray-400 outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/30 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500"
                           />
-                        </div>
-
-                        {/* Tags */}
-                        <div className="mb-5">
-                          <p className="mb-2 text-xs font-medium text-gray-500 dark:text-gray-400">
-                            Tags
-                          </p>
-                          <div className="flex flex-wrap gap-1.5">
-                            {(task.tags ?? []).map((tag) => (
-                              <span
-                                key={tag.id}
-                                className="rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary dark:bg-primary/20"
-                              >
-                                {tag.value}
-                              </span>
-                            ))}
-                            <TagsPopover
-                              taskId={task.id}
-                              currentTagIds={(task.tags ?? []).map((t) => t.id)}
-                            />
-                          </div>
-                        </div>
-
-                        {/* Comments */}
-                        <div>
-                          <p className="mb-3 text-xs font-medium text-gray-500 dark:text-gray-400">
-                            Comments ({comments.length})
-                          </p>
-                          {comments.length > 0 && (
-                            <ul className="mb-4 space-y-3">
-                              {comments.map((c) => (
-                                <li
-                                  key={c.id}
-                                  className="rounded-lg bg-gray-50 px-3 py-2.5 dark:bg-gray-800"
-                                >
-                                  <div className="mb-1 flex items-center gap-2">
-                                    <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">
-                                      {c.author.name}
-                                    </span>
-                                    <span className="text-xs text-gray-400">
-                                      {format(parseISO(c.createdAt), 'MMM d, HH:mm')}
-                                    </span>
-                                  </div>
-                                  <p className="text-sm text-gray-800 dark:text-gray-200">
-                                    {c.body}
-                                  </p>
-                                </li>
-                              ))}
-                            </ul>
-                          )}
-
-                          {/* Add comment */}
-                          <div className="flex gap-2">
-                            <input
-                              value={commentBody}
-                              onChange={(e) => setCommentBody(e.target.value)}
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter' && !e.shiftKey) {
-                                  e.preventDefault()
-                                  void handleSendComment()
-                                }
-                              }}
-                              placeholder="Add a comment…"
-                              className="flex-1 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder-gray-400 outline-none focus:border-primary focus:ring-2 focus:ring-primary/30 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500"
-                            />
-                            <Button
-                              size="sm"
-                              onClick={handleSendComment}
-                              loading={addComment.isPending}
-                              disabled={!commentBody.trim()}
-                            >
-                              <Send className="h-3.5 w-3.5" />
-                            </Button>
-                          </div>
                         </div>
                       </>
                     )}

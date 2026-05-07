@@ -31,23 +31,6 @@ export type Task = {
   projectId: string
   createdAt: string
   updatedAt: string
-  tags?: Tag[]
-}
-
-export type Tag = {
-  id: string
-  value: string
-  ownerId: string
-}
-
-export type Comment = {
-  id: string
-  body: string
-  taskId: string
-  authorId: string
-  author: User
-  createdAt: string
-  updatedAt: string
 }
 
 export type ApiToken = {
@@ -87,7 +70,6 @@ export type WebhookCreated = Webhook & { secret: string }
 export type SavedViewFilter = {
   status?: TaskStatus[]
   priority?: Priority[]
-  tagIds?: string[]
   dueWithin?: 'today' | 'thisWeek' | 'overdue' | 'doneInLast7Days'
   search?: string
   includeArchived?: boolean
