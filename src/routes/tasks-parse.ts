@@ -22,13 +22,13 @@ export default async function taskParseRoutes(app: FastifyInstance) {
     '/tasks/parse',
     { preHandler: [requireAuth] },
     async (request, reply) => {
-      if (!env.GROQ_API_KEY) {
-        return reply.status(503).send({ error: 'AI parsing not configured' });
-      }
-
       const body = bodySchema.safeParse(request.body);
       if (!body.success) {
         return reply.status(400).send({ error: 'text is required (max 500 chars)' });
+      }
+
+      if (!env.GROQ_API_KEY) {
+        return reply.status(503).send({ error: 'AI parsing not configured' });
       }
 
       const today = new Date().toISOString().split('T')[0];

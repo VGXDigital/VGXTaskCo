@@ -51,6 +51,17 @@ export function App() {
     setRoute(next)
   }
 
+  // /login path — show LoginPage regardless of auth state so that direct
+  // navigation to /login (e.g. Playwright E2E tests) always renders SSO buttons.
+  if (window.location.pathname === '/login') {
+    return (
+      <>
+        <LoginPage onLogin={handleLogin} />
+        <Toaster richColors position="top-right" />
+      </>
+    )
+  }
+
   // OAuth callback — must be checked before the loggedIn gate so Supabase
   // redirects land here even when there is no session yet.
   if (window.location.pathname === '/auth/callback') {

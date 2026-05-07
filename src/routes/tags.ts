@@ -125,6 +125,84 @@ const tagRoutes: FastifyPluginAsync = async (app) => {
 
     return reply.status(200).send({ data: updated });
   });
+
+  /**
+   * POST /tasks/:taskId/tags/:tagId
+   * Attach a single tag to a task.
+   * The tag must be owned by the authenticated user.
+   */
+  app.post('/tasks/:taskId/tags/:tagId', { preHandler: [requireAuth] }, async (request, reply) => {
+    const taskIdParsed = cuidParam.safeParse((request.params as { taskId: string; tagId: string }).taskId);
+    if (!taskIdParsed.success) {
+      return reply.status(400).send({ error: 'Invalid task id' });
+    }
+
+    const tagIdParsed = cuidParam.safeParse((request.params as { taskId: string; tagId: string }).tagId);
+    if (!tagIdParsed.success) {
+      return reply.status(400).send({ error: 'Invalid tag id' });
+    }
+
+    const task = await prisma.task.findUnique({
+      where: { id: taskIdParsed.data },
+      include: { project: true },
+    });
+
+    if (!task || task.project.ownerId !== request.user.id) {
+      return reply.status(404).send({ error: 'Task not found' });
+    }
+
+    const tag = await prisma.tag.findFirst({
+      where: { id: tagIdParsed.data, ownerId: request.user.id },
+    });
+
+    if (!tag) {
+      return reply.status(404).send({ error: 'Tag not found' });
+    }
+
+    const updated = await prisma.task.update({
+      where: { id: taskIdParsed.data },
+      data: {
+        tags: { connect: { id: tagIdParsed.data } },
+      },
+      include: { tags: true },
+    });
+
+    return reply.status(200).send({ data: updated });
+  });
+
+  /**
+   * DELETE /tasks/:taskId/tags/:tagId
+   * Detach a single tag from a task.
+   */
+  app.delete('/tasks/:taskId/tags/:tagId', { preHandler: [requireAuth] }, async (request, reply) => {
+    const taskIdParsed = cuidParam.safeParse((request.params as { taskId: string; tagId: string }).taskId);
+    if (!taskIdParsed.success) {
+      return reply.status(400).send({ error: 'Invalid task id' });
+    }
+
+    const tagIdParsed = cuidParam.safeParse((request.params as { taskId: string; tagId: string }).tagId);
+    if (!tagIdParsed.success) {
+      return reply.status(400).send({ error: 'Invalid tag id' });
+    }
+
+    const task = await prisma.task.findUnique({
+      where: { id: taskIdParsed.data },
+      include: { project: true },
+    });
+
+    if (!task || task.project.ownerId !== request.user.id) {
+      return reply.status(404).send({ error: 'Task not found' });
+    }
+
+    await prisma.task.update({
+      where: { id: taskIdParsed.data },
+      data: {
+        tags: { disconnect: { id: tagIdParsed.data } },
+      },
+    });
+
+    return reply.status(200).send({ data: { deleted: true } });
+  });
 };
 
 export default tagRoutes;

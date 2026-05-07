@@ -30,6 +30,8 @@ export function Modal({ open, onOpenChange, title, description, children }: Moda
 
             <Dialog.Content asChild>
               <motion.div
+                role="dialog"
+                aria-modal="true"
                 className="fixed left-1/2 top-1/2 z-50 w-full max-w-md -translate-x-1/2 -translate-y-1/2 rounded-lg bg-white p-6 shadow-xl dark:bg-gray-900"
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}

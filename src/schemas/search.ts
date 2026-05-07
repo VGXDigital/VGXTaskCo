@@ -4,7 +4,7 @@ import { z } from 'zod';
 
 export const searchQuerySchema = z
   .object({
-    q: z.string().min(1, 'Search query is required').max(200, 'Search query must be 200 characters or fewer'),
+    q: z.string().min(2, 'Search query must be at least 2 characters').max(200, 'Search query must be 200 characters or fewer'),
   })
   .strict();
 

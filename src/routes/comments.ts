@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { prisma } from '../lib/prisma.js';
 import { requireAuth } from '../middleware/auth.js';
 import { createCommentBodySchema, updateCommentBodySchema } from '../schemas/comment.js';
+import { recordActivity } from '../services/activity.js';
 
 const cuidParam = z.string().cuid('Invalid id');
 
@@ -78,6 +79,14 @@ const commentRoutes: FastifyPluginAsync = async (app) => {
       },
     });
 
+    void recordActivity({
+      actorId: request.user.id,
+      action: 'comment.created',
+      subjectType: 'comment',
+      subjectId: comment.id,
+      projectId: task.project.id,
+    });
+
     return reply.status(201).send({ data: comment });
   });
 
@@ -102,8 +111,11 @@ const commentRoutes: FastifyPluginAsync = async (app) => {
       include: { task: { include: { project: true } } },
     });
 
-    if (!comment || comment.authorId !== request.user.id) {
+    if (!comment) {
       return reply.status(404).send({ error: 'Comment not found' });
+    }
+    if (comment.authorId !== request.user.id) {
+      return reply.status(403).send({ error: 'You can only edit your own comments' });
     }
 
     const updated = await prisma.comment.update({
