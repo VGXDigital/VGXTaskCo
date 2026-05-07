@@ -475,8 +475,8 @@ describe('DELETE /tasks/:id', () => {
       headers: { authorization: `Bearer ${tokenA}` },
     });
     expect(res.statusCode).toBe(200);
-    const body = res.json<{ data: { id: string } }>();
-    expect(body.data.id).toBe(taskId);
+    const body = res.json<{ data: { deleted: boolean } }>();
+    expect(body.data.deleted).toBe(true);
   });
 
   it('subsequent GET on parent project tasks returns task gone', async () => {

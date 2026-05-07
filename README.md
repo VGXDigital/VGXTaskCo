@@ -1,6 +1,6 @@
 # VGXTaskCo
 
-**Version: 0.7.0**
+**Version: 0.7.2**
 
 The reference implementation for [VGX Global Consulting's AI-Powered Development with Claude masterclass](https://vgx.guru). Built live during the course to demonstrate AI-assisted full-stack development — every commit, prompt, and architectural decision is traceable to the build sequence in `vgxtaskco-build.md`.
 
@@ -10,7 +10,7 @@ The reference implementation for [VGX Global Consulting's AI-Powered Development
 
 ## What it is
 
-A task management app: projects, tasks, tags, comments, saved views, CSV export, n8n webhooks, API tokens, full activity and audit log, Google + GitHub SSO via Supabase Auth.
+A task management app: projects, tasks, saved views, CSV export, n8n webhooks, API tokens, full activity and audit log, Google + GitHub SSO via Supabase Auth.
 
 **Backend** — TypeScript + Fastify + Prisma + PostgreSQL (Neon)
 **Frontend** — React + Vite + Tailwind v3 + TanStack Query
@@ -39,7 +39,7 @@ pnpm dev                  # http://localhost:5173
 
 ```bash
 # Backend integration tests (Vitest, hits real Neon DB)
-pnpm test              # 120 tests
+pnpm test              # 121 tests
 
 # Frontend unit tests (Vitest, jsdom)
 cd web && pnpm test    # 102 tests
@@ -57,6 +57,21 @@ For VGX VPS: see [VPS Setup](prompts/VPS-SETUP.md) + GitHub Actions workflow in 
 ---
 
 ## Changelog
+
+### 0.7.2 (2026-05-07)
+
+- Removed tags and comments features from backend and frontend — routes, schemas, service code, CSV column, search results, and all E2E test cases
+- Fixed `DELETE /tasks/:id` response shape to `{ deleted: true }` per API contract
+- Fixed webhook HMAC header typo: `X-VGXT-Signature` → `X-VGX-Signature`
+- Webhook URL SSRF validator now allows localhost in non-production environments (unblocks E2E webhook tests)
+- Fixed `api-client` sending `Content-Type: application/json` on bodyless DELETE requests (caused 400s from Fastify body parser)
+- Fixed modal centering: framer-motion `scale` animation was overwriting Tailwind `-translate-x/y-1/2` transforms; replaced with flexbox centering wrapper
+- Redesigned `CreateTaskModal`: Todoist-inspired layout with large title input, AI smart field (auto-focused on open), pill toolbar for date+time/priority/status, `@mention` project picker with keyboard navigation, and project badge in footer
+- Added time support to due date (date + optional time combined into ISO datetime)
+- Lifted `N` keyboard shortcut to `App.tsx` — now works on dashboard and all non-project pages; project pages self-manage with project pre-selected
+- Dashboard "Quick task" button delegates to App-level modal; no longer requires a first project to exist
+- Fixed E2E `tc-kbd-001`: use `document.body.focus()` + `dispatchEvent` on body so keydown bubbles reliably to window listener in headless Playwright
+- Cleaned test-results and playwright-report from git tracking
 
 ### 0.7.0 (2026-05-07)
 
