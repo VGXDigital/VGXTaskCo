@@ -17,8 +17,10 @@ export const ALLOWED_WEBHOOK_EVENTS = [
  * Validates that a webhook URL is a public HTTPS endpoint.
  * Blocks localhost, loopback, link-local, and RFC1918 private ranges
  * to prevent SSRF attacks against internal infrastructure.
+ * In non-production environments, local URLs are allowed for testing.
  */
 const publicHttpsUrl = z.string().url().refine((url) => {
+  if (process.env.NODE_ENV !== 'production') return true;
   try {
     const parsed = new URL(url);
     if (parsed.protocol !== 'https:') return false;

@@ -8,7 +8,7 @@ import { searchQuerySchema } from '../schemas/search.js';
 const searchRoutes: FastifyPluginAsync = async (app) => {
   /**
    * GET /search
-   * Full-text search across projects, tasks, and comments scoped to the caller.
+   * Full-text search across projects and tasks scoped to the caller.
    */
   app.get('/search', { preHandler: [requireAuthOrApiToken] }, async (request, reply) => {
     const parsed = searchQuerySchema.safeParse(request.query);
@@ -20,7 +20,7 @@ const searchRoutes: FastifyPluginAsync = async (app) => {
     const { q } = parsed.data;
     const userId = request.user.id;
 
-    const [projects, tasks, comments] = await Promise.all([
+    const [projects, tasks] = await Promise.all([
       prisma.project.findMany({
         where: {
           ownerId: userId,
@@ -44,27 +44,9 @@ const searchRoutes: FastifyPluginAsync = async (app) => {
         take: 10,
         orderBy: { updatedAt: 'desc' },
       }),
-
-      prisma.comment.findMany({
-        where: {
-          task: { project: { ownerId: userId } },
-          body: { contains: q, mode: 'insensitive' },
-        },
-        take: 10,
-        orderBy: { updatedAt: 'desc' },
-        include: {
-          task: {
-            select: {
-              id: true,
-              title: true,
-              project: { select: { id: true, name: true } },
-            },
-          },
-        },
-      }),
     ]);
 
-    return reply.status(200).send({ data: { projects, tasks, comments } });
+    return reply.status(200).send({ data: { projects, tasks } });
   });
 };
 

@@ -43,7 +43,7 @@ export async function dispatchWebhook(
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              'X-VGXT-Signature': `sha256=${sig}`,
+              'X-VGX-Signature': `sha256=${sig}`,
             },
             body,
             signal: controller.signal,

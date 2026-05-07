@@ -40,10 +40,6 @@ const crossProjectQuerySchema = z.object({
   status: z.nativeEnum(TaskStatus).optional(),
   priority: z.nativeEnum(Priority).optional(),
   dueWithin: z.enum(['today', 'thisWeek', 'overdue', 'doneInLast7Days']).optional(),
-  tagIds: z
-    .string()
-    .optional()
-    .transform((val) => (val ? val.split(',').map((s) => s.trim()).filter(Boolean) : undefined)),
   search: z.string().max(200).optional(),
   includeArchived: z.coerce.boolean().optional().default(false),
 });
@@ -76,8 +72,7 @@ const taskRoutes: FastifyPluginAsync = async (app) => {
       return reply.status(404).send({ error: 'Project not found' });
     }
 
-    // Return task with empty tags array — consistent with listTasks shape
-    return reply.status(201).send({ data: { ...task, tags: [] } });
+    return reply.status(201).send({ data: task });
   });
 
   /**
@@ -174,7 +169,7 @@ const taskRoutes: FastifyPluginAsync = async (app) => {
       return reply.status(404).send({ error: 'Task not found' });
     }
 
-    return reply.status(200).send({ data: result });
+    return reply.status(200).send({ data: { deleted: true } });
   });
 
   // ── Cross-project endpoint ────────────────────────────────────────────────

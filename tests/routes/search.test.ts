@@ -43,13 +43,12 @@ describe('GET /search', () => {
     const projectId = projectRes.json<{ data: { id: string } }>().data.id;
 
     // Seed: task with "audit" in title
-    const taskTitleRes = await app.inject({
+    await app.inject({
       method: 'POST',
       url: `/projects/${projectId}/tasks`,
       headers: { authorization: `Bearer ${tokenA}` },
       payload: { title: 'audit trail review' },
     });
-    const taskTitleId = taskTitleRes.json<{ data: { id: string } }>().data.id;
 
     // Seed: task with "audit" in description only
     await app.inject({
@@ -57,14 +56,6 @@ describe('GET /search', () => {
       url: `/projects/${projectId}/tasks`,
       headers: { authorization: `Bearer ${tokenA}` },
       payload: { title: 'Check compliance', description: 'Run an audit on the system' },
-    });
-
-    // Seed: comment with "audit" for user A on the title task
-    await app.inject({
-      method: 'POST',
-      url: `/tasks/${taskTitleId}/comments`,
-      headers: { authorization: `Bearer ${tokenA}` },
-      payload: { body: 'This is an audit comment' },
     });
 
     // Seed: user B's "audit" project — must NOT appear in user A's search
@@ -84,19 +75,17 @@ describe('GET /search', () => {
     });
   });
 
-  it('returns 200 with correct { data: { projects, tasks, comments } } structure', async () => {
+  it('returns 200 with correct { data: { projects, tasks } } structure', async () => {
     const res = await app.inject({
       method: 'GET',
       url: '/search?q=audit',
       headers: { authorization: `Bearer ${tokenA}` },
     });
     expect(res.statusCode).toBe(200);
-    const body = res.json<{ data: { projects: { id: string; name: string }[]; tasks: { id: string; title: string }[]; comments: unknown[] } }>();
+    const body = res.json<{ data: { projects: { id: string; name: string }[]; tasks: { id: string; title: string }[] } }>();
     expect(body.data).toBeDefined();
     expect(Array.isArray(body.data.projects)).toBe(true);
     expect(Array.isArray(body.data.tasks)).toBe(true);
-    expect(Array.isArray(body.data.comments)).toBe(true);
-    // Shape assertions on search result items
     if (body.data.projects.length > 0) {
       expect(typeof body.data.projects[0].id).toBe('string');
       expect(typeof body.data.projects[0].name).toBe('string');

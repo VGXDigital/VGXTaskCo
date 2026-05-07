@@ -903,193 +903,6 @@ async function runApiTest(entry: MatrixEntry): Promise<void> {
       break;
     }
 
-    // ── Tags ──────────────────────────────────────────────────────────────────────
-
-    case 'tag-001': {
-      const res = await apiFetch('/tags', {
-        method: 'POST',
-        body: JSON.stringify({ value: `${prefix}:high` }),
-      });
-      expect(res.status, `[${entry.id}] Create tag expected 201`).toBe(201);
-      const body = (await res.json()) as AnyJson;
-      expect(body.data?.id).toBeTruthy();
-      expect(body.data?.value).toBe(`${prefix}:high`);
-      break;
-    }
-
-    case 'tag-002': {
-      await apiFetch('/tags', { method: 'POST', body: JSON.stringify({ value: `${prefix}:list-test` }) });
-      const other = await createTestUser(`${prefix}-b`);
-      await apiFetch('/tags', { method: 'POST', token: other.token, body: JSON.stringify({ value: `${prefix}:other-tag` }) });
-      const res = await apiFetch('/tags');
-      expect(res.status).toBe(200);
-      const body = (await res.json()) as AnyJson;
-      for (const t of body.data as AnyJson[]) {
-        expect(t.ownerId, `[${entry.id}] Tags must belong to caller`).toBe(auth.userId);
-      }
-      break;
-    }
-
-    case 'tag-003': {
-      const proj = await createProject(`${prefix}-proj`);
-      const task = await createTask(proj.id, `${prefix}-task`);
-      const tagRes = await apiFetch('/tags', { method: 'POST', body: JSON.stringify({ value: `${prefix}:attach` }) });
-      const tagBody = (await tagRes.json()) as AnyJson;
-      const res = await apiFetch(`/tasks/${task.id}/tags/${tagBody.data.id}`, { method: 'POST' });
-      expect(res.status, `[${entry.id}] Attach tag expected 200`).toBe(200);
-      break;
-    }
-
-    case 'tag-004': {
-      const proj = await createProject(`${prefix}-proj`);
-      const task = await createTask(proj.id, `${prefix}-task`);
-      const tagRes = await apiFetch('/tags', { method: 'POST', body: JSON.stringify({ value: `${prefix}:detach` }) });
-      const tagBody = (await tagRes.json()) as AnyJson;
-      await apiFetch(`/tasks/${task.id}/tags/${tagBody.data.id}`, { method: 'POST' });
-      const res = await apiFetch(`/tasks/${task.id}/tags/${tagBody.data.id}`, { method: 'DELETE' });
-      expect(res.status, `[${entry.id}] Detach tag expected 200`).toBe(200);
-      break;
-    }
-
-    case 'tag-005': {
-      const other = await createTestUser(`${prefix}-b`);
-      const otherTagRes = await apiFetch('/tags', { method: 'POST', token: other.token, body: JSON.stringify({ value: `${prefix}:other-cross` }) });
-      const otherTagBody = (await otherTagRes.json()) as AnyJson;
-      const proj = await createProject(`${prefix}-proj`);
-      const task = await createTask(proj.id, `${prefix}-task`);
-      const res = await apiFetch(`/tasks/${task.id}/tags/${otherTagBody.data.id}`, { method: 'POST' });
-      expect([403, 404], `[${entry.id}] Cross-user tag attach must be blocked`).toContain(res.status);
-      break;
-    }
-
-    case 'tag-006': {
-      await apiFetch('/tags', { method: 'POST', body: JSON.stringify({ value: `${prefix}:unique` }) });
-      const res2 = await apiFetch('/tags', { method: 'POST', body: JSON.stringify({ value: `${prefix}:unique` }) });
-      expect(res2.status, `[${entry.id}] Duplicate tag value for same user should return 409`).toBe(409);
-      break;
-    }
-
-    // ── Comments ─────────────────────────────────────────────────────────────────
-
-    case 'comment-001': {
-      const proj = await createProject(`${prefix}-proj`);
-      const task = await createTask(proj.id, `${prefix}-task`);
-      const res = await apiFetch(`/tasks/${task.id}/comments`, {
-        method: 'POST',
-        body: JSON.stringify({ body: 'Hello from test' }),
-      });
-      expect(res.status, `[${entry.id}] Create comment expected 201`).toBe(201);
-      const body = (await res.json()) as AnyJson;
-      expect(body.data?.id).toBeTruthy();
-      expect(body.data?.authorId).toBe(auth.userId);
-      break;
-    }
-
-    case 'comment-002': {
-      const proj = await createProject(`${prefix}-proj`);
-      const task = await createTask(proj.id, `${prefix}-task`);
-      await apiFetch(`/tasks/${task.id}/comments`, { method: 'POST', body: JSON.stringify({ body: 'First' }) });
-      await apiFetch(`/tasks/${task.id}/comments`, { method: 'POST', body: JSON.stringify({ body: 'Second' }) });
-      const res = await apiFetch(`/tasks/${task.id}/comments`);
-      expect(res.status).toBe(200);
-      const body = (await res.json()) as AnyJson;
-      const comments = body.data as AnyJson[];
-      expect(comments.length).toBeGreaterThanOrEqual(2);
-      // Check ascending order
-      for (let i = 1; i < comments.length; i++) {
-        expect(
-          new Date(comments[i]!.createdAt).getTime(),
-          `[${entry.id}] Comments should be ascending`,
-        ).toBeGreaterThanOrEqual(new Date(comments[i - 1]!.createdAt).getTime());
-      }
-      break;
-    }
-
-    case 'comment-003': {
-      const proj = await createProject(`${prefix}-proj`);
-      const task = await createTask(proj.id, `${prefix}-task`);
-      const cRes = await apiFetch(`/tasks/${task.id}/comments`, { method: 'POST', body: JSON.stringify({ body: 'Original' }) });
-      const cBody = (await cRes.json()) as AnyJson;
-      const res = await apiFetch(`/comments/${cBody.data.id}`, {
-        method: 'PATCH',
-        body: JSON.stringify({ body: 'Updated' }),
-      });
-      expect(res.status, `[${entry.id}] Author edit expected 200`).toBe(200);
-      const body = (await res.json()) as AnyJson;
-      expect(body.data?.body).toBe('Updated');
-      break;
-    }
-
-    case 'comment-004': {
-      const proj = await createProject(`${prefix}-proj`);
-      const task = await createTask(proj.id, `${prefix}-task`);
-      const cRes = await apiFetch(`/tasks/${task.id}/comments`, { method: 'POST', body: JSON.stringify({ body: 'Delete me' }) });
-      const cBody = (await cRes.json()) as AnyJson;
-      const res = await apiFetch(`/comments/${cBody.data.id}`, { method: 'DELETE' });
-      expect(res.status, `[${entry.id}] Author delete expected 200`).toBe(200);
-      break;
-    }
-
-    case 'comment-005': {
-      // Project owner (auth user) deletes a comment by a different author
-      const commentAuthor = await createTestUser(`${prefix}-author`);
-      const proj = await createProject(`${prefix}-proj`); // owned by auth
-      const task = await createTask(proj.id, `${prefix}-task`);
-      // Grant author access to the task via their own project... not needed if API allows commenting
-      const cRes = await apiFetch(`/tasks/${task.id}/comments`, {
-        method: 'POST',
-        token: commentAuthor.token,
-        body: JSON.stringify({ body: 'Comment by other' }),
-      });
-      if (cRes.ok) {
-        const cBody = (await cRes.json()) as AnyJson;
-        const res = await apiFetch(`/comments/${cBody.data.id}`, { method: 'DELETE' });
-        expect(res.status, `[${entry.id}] Project owner should be able to delete comments`).toBe(200);
-      } else {
-        // If the API requires the user to be in the project, skip gracefully
-        console.warn(`[${entry.id}] Skipping — comment author couldn't post to cross-user task`);
-      }
-      break;
-    }
-
-    case 'comment-006': {
-      const other = await createTestUser(`${prefix}-b`);
-      const proj = await createProject(`${prefix}-proj`);
-      const task = await createTask(proj.id, `${prefix}-task`);
-      const cRes = await apiFetch(`/tasks/${task.id}/comments`, { method: 'POST', body: JSON.stringify({ body: 'Mine' }) });
-      const cBody = (await cRes.json()) as AnyJson;
-      const res = await apiFetch(`/comments/${cBody.data.id}`, {
-        method: 'PATCH',
-        token: other.token,
-        body: JSON.stringify({ body: 'Hacked' }),
-      });
-      expect(res.status, `[${entry.id}] Non-author edit must return 403`).toBe(403);
-      break;
-    }
-
-    case 'comment-007': {
-      // Project owner tries to EDIT (not delete) a comment by another author
-      const commentAuthor = await createTestUser(`${prefix}-author`);
-      const proj = await createProject(`${prefix}-proj`);
-      const task = await createTask(proj.id, `${prefix}-task`);
-      const cRes = await apiFetch(`/tasks/${task.id}/comments`, {
-        method: 'POST',
-        token: commentAuthor.token,
-        body: JSON.stringify({ body: 'Comment by author' }),
-      });
-      if (cRes.ok) {
-        const cBody = (await cRes.json()) as AnyJson;
-        const res = await apiFetch(`/comments/${cBody.data.id}`, {
-          method: 'PATCH',
-          body: JSON.stringify({ body: 'Owner edit attempt' }),
-        });
-        expect(res.status, `[${entry.id}] Project owner editing other's comment must return 403`).toBe(403);
-      } else {
-        console.warn(`[${entry.id}] Skipping — comment author couldn't post`);
-      }
-      break;
-    }
-
     // ── Activity ──────────────────────────────────────────────────────────────────
 
     case 'activity-007': {
@@ -1673,14 +1486,22 @@ async function runUiTest(entry: MatrixEntry, page: import('@playwright/test').Pa
     case 'tc-kbd-001': {
       const proj = await createProject(`tc-kbd-001-${Date.now()}`);
       await page.goto(`${FRONTEND_URL}/projects/${proj.id}`, { waitUntil: 'networkidle' });
-      await page.waitForTimeout(500);
 
-      // Press N (while not focused in an input) to open the create task modal
-      await page.keyboard.press('n');
+      // Wait for the React component to mount and register the keydown listener
+      await page.waitForSelector('h1', { timeout: 5000 });
+      await page.waitForTimeout(200);
 
-      const modal = page.locator('[role="dialog"], [data-testid="create-task-modal"], .modal, [aria-modal="true"]').first();
-      const modalVisible = await modal.isVisible({ timeout: 3000 }).catch(() => false);
-      expect(modalVisible, `[${entry.id}] Pressing N should open the create task modal`).toBe(true);
+      // Focus body and dispatch keydown on it so it bubbles to window.
+      // e.target = body (tagName 'BODY') — passes the INPUT/TEXTAREA/SELECT filter.
+      await page.evaluate(() => {
+        document.body.focus();
+        document.body.dispatchEvent(
+          new KeyboardEvent('keydown', { key: 'n', code: 'KeyN', bubbles: true, cancelable: true }),
+        );
+      });
+
+      // waitForSelector retries until element appears (throws after timeout)
+      await page.waitForSelector('[role="dialog"]', { timeout: 5000 });
       break;
     }
 
@@ -1951,18 +1772,6 @@ async function runDbTest(entry: MatrixEntry): Promise<void> {
       if (statusChange?.metadata) {
         expect(statusChange.metadata.to, `[${entry.id}] metadata.to should be DONE`).toBe('DONE');
       }
-      break;
-    }
-
-    case 'activity-006': {
-      const proj = await createProject(`${prefix}-proj`);
-      const task = await createTask(proj.id, `${prefix}-task`);
-      const comment = await apiFetch(`/tasks/${task.id}/comments`, { method: 'POST', body: JSON.stringify({ body: 'Test comment' }) });
-      const commentBody = (await comment.json()) as { data: { id: string } };
-      const res = await apiFetch(`/activity?subjectId=${commentBody.data.id}&subjectType=comment`);
-      const body = (await res.json()) as { data: { action: string }[] };
-      const found = body.data.some((a) => a.action === 'comment.created');
-      expect(found, `[${entry.id}] comment.created activity should exist`).toBe(true);
       break;
     }
 

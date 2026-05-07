@@ -84,7 +84,7 @@ describe('POST /projects/:id/tasks', () => {
       payload: { title: 'Default Task' },
     });
     expect(res.statusCode).toBe(201);
-    const body = res.json<{ data: { id: string; title: string; status: string; priority: string; projectId: string; tags: unknown[] } }>();
+    const body = res.json<{ data: { id: string; title: string; status: string; priority: string; projectId: string } }>();
     expect(body.data.id).toBeTruthy();
     expect(body.data.status).toBe('TODO');
     expect(body.data.priority).toBe('MEDIUM');
@@ -93,7 +93,6 @@ describe('POST /projects/:id/tasks', () => {
     expect(typeof body.data.title).toBe('string');
     expect(typeof body.data.status).toBe('string');
     expect(typeof body.data.projectId).toBe('string');
-    expect(Array.isArray(body.data.tags)).toBe(true);
   });
 
   it('returns 201 with explicit status IN_PROGRESS and priority HIGH', async () => {
@@ -213,7 +212,7 @@ describe('GET /projects/:id/tasks', () => {
       headers: { authorization: `Bearer ${tokenA}` },
     });
     expect(res.statusCode).toBe(200);
-    const body = res.json<{ data: { id: string; title: string; status: string; priority: string; projectId: string; tags: unknown[] }[] }>();
+    const body = res.json<{ data: { id: string; title: string; status: string; priority: string; projectId: string }[] }>();
     expect(Array.isArray(body.data)).toBe(true);
     expect(body.data.length).toBeGreaterThanOrEqual(4);
     // Shape assertions on list items
@@ -224,7 +223,6 @@ describe('GET /projects/:id/tasks', () => {
       expect(typeof task.status).toBe('string');
       expect(typeof task.priority).toBe('string');
       expect(typeof task.projectId).toBe('string');
-      expect(Array.isArray(task.tags)).toBe(true);
     }
   });
 

@@ -12,8 +12,6 @@ import { env } from './lib/env.js';
 import authRoutes from './routes/auth.js';
 import projectRoutes from './routes/projects.js';
 import taskRoutes from './routes/tasks.js';
-import tags from './routes/tags.js';
-import comments from './routes/comments.js';
 import activity from './routes/activity.js';
 import views from './routes/views.js';
 import apiTokens from './routes/api-tokens.js';
@@ -80,8 +78,6 @@ if (env.NODE_ENV === 'production') {
 await app.register(authRoutes, { prefix: '/auth' });
 await app.register(projectRoutes, { prefix: '/projects' });
 await app.register(taskRoutes); // task routes already carry full paths
-await app.register(tags);
-await app.register(comments);
 await app.register(activity);
 await app.register(views);
 await app.register(apiTokens);

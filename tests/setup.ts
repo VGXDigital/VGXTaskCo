@@ -9,8 +9,6 @@ import { afterAll } from 'vitest';
 import authRoutes from '../src/routes/auth.js';
 import projectRoutes from '../src/routes/projects.js';
 import taskRoutes from '../src/routes/tasks.js';
-import tagRoutes from '../src/routes/tags.js';
-import commentRoutes from '../src/routes/comments.js';
 import apiTokenRoutes from '../src/routes/api-tokens.js';
 import searchRoutes from '../src/routes/search.js';
 import reminderRoutes from '../src/routes/reminders.js';
@@ -35,8 +33,6 @@ export async function buildTestApp() {
   await app.register(authRoutes, { prefix: '/auth' });
   await app.register(projectRoutes, { prefix: '/projects' });
   await app.register(taskRoutes);
-  await app.register(tagRoutes);
-  await app.register(commentRoutes);
   await app.register(apiTokenRoutes);
   await app.register(searchRoutes);
   await app.register(reminderRoutes);

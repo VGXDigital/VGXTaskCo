@@ -30,7 +30,6 @@ export const TASK_CSV_HEADERS: string[] = [
   'status',
   'priority',
   'dueDate',
-  'tags',
   'createdAt',
   'updatedAt',
 ];

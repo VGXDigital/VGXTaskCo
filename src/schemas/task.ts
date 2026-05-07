@@ -53,10 +53,6 @@ export const listTasksQuerySchema = z
     status: z.nativeEnum(TaskStatus).optional(),
     priority: z.nativeEnum(Priority).optional(),
     dueWithin: z.enum(['today', 'thisWeek', 'overdue', 'doneInLast7Days']).optional(),
-    tagIds: z
-      .string()
-      .optional()
-      .transform((val) => (val ? val.split(',').map((s) => s.trim()).filter(Boolean) : undefined)),
     search: z.string().max(200, 'Search query must be 200 characters or fewer').optional(),
     includeArchived: z.coerce.boolean().optional().default(false),
   })

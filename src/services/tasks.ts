@@ -18,10 +18,6 @@ import type { RequestContext } from '../lib/types.js';
 
 export type { RequestContext };
 
-export type TaskWithTags = Task & {
-  tags: { id: string; value: string; color: string }[];
-};
-
 export interface CreateTaskInput {
   title: string;
   description?: string;
@@ -43,7 +39,6 @@ export interface TaskFilter {
   status?: TaskStatus;
   priority?: import('@prisma/client').Priority;
   dueWithin?: 'today' | 'thisWeek' | 'overdue' | 'doneInLast7Days';
-  tagIds?: string[];
   search?: string;
   includeArchived?: boolean;
 }
@@ -86,11 +81,11 @@ export async function listTasks(
   userId: string,
   projectId: string,
   filter: TaskFilter,
-): Promise<TaskWithTags[] | null> {
+): Promise<Task[] | null> {
   const project = await assertProjectAccess(userId, projectId);
   if (!project) return null;
 
-  const { status, priority, dueWithin, tagIds, search, includeArchived } = filter;
+  const { status, priority, dueWithin, search, includeArchived } = filter;
 
   const where: Prisma.TaskWhereInput = { projectId };
 
@@ -124,10 +119,6 @@ export async function listTasks(
     }
   }
 
-  if (tagIds && tagIds.length > 0) {
-    where.tags = { some: { id: { in: tagIds } } };
-  }
-
   if (search) {
     where.OR = [
       { title: { contains: search, mode: 'insensitive' } },
@@ -137,7 +128,6 @@ export async function listTasks(
 
   return prisma.task.findMany({
     where,
-    include: { tags: { select: { id: true, value: true, color: true } } },
     orderBy: [
       { dueDate: { sort: 'asc', nulls: 'last' } },
       { createdAt: 'desc' },
@@ -154,7 +144,7 @@ export async function listTasksForProjects(
   userId: string,
   projectIds: string[],
   filter: TaskFilter,
-): Promise<TaskWithTags[] | null> {
+): Promise<Task[] | null> {
   // Verify ownership of all requested projects in one query
   const ownedProjects = await prisma.project.findMany({
     where: { id: { in: projectIds }, ownerId: userId },
@@ -163,7 +153,7 @@ export async function listTasksForProjects(
 
   if (ownedProjects.length !== projectIds.length) return null;
 
-  const { status, priority, dueWithin, tagIds, search, includeArchived } = filter;
+  const { status, priority, dueWithin, search, includeArchived } = filter;
 
   const where: Prisma.TaskWhereInput = { projectId: { in: projectIds } };
 
@@ -197,10 +187,6 @@ export async function listTasksForProjects(
     }
   }
 
-  if (tagIds && tagIds.length > 0) {
-    where.tags = { some: { id: { in: tagIds } } };
-  }
-
   if (search) {
     where.OR = [
       { title: { contains: search, mode: 'insensitive' } },
@@ -210,7 +196,6 @@ export async function listTasksForProjects(
 
   return prisma.task.findMany({
     where,
-    include: { tags: { select: { id: true, value: true, color: true } } },
     orderBy: [
       { dueDate: { sort: 'asc', nulls: 'last' } },
       { createdAt: 'desc' },

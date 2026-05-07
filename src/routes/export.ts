@@ -52,7 +52,7 @@ const exportRoutes: FastifyPluginAsync = async (app) => {
         return reply.status(404).send({ error: 'Project not found' });
       }
 
-      const { status, priority, tagIds: rawTagIds, includeArchived } = queryParsed.data;
+      const { status, priority, includeArchived } = queryParsed.data;
 
       const where = {
         projectId: projectIdParsed.data,
@@ -65,13 +65,8 @@ const exportRoutes: FastifyPluginAsync = async (app) => {
         ...(includeArchived !== 'true' ? { archivedAt: null } : {}),
       };
 
-      const tagIds = rawTagIds ? rawTagIds.split(',').filter(Boolean) : [];
-
       const tasks = await prisma.task.findMany({
-        where: tagIds.length > 0
-          ? { ...where, tags: { some: { id: { in: tagIds } } } }
-          : where,
-        include: { tags: true },
+        where,
         orderBy: [{ dueDate: { sort: 'asc', nulls: 'last' } }, { createdAt: 'desc' }],
       });
 
@@ -92,7 +87,6 @@ const exportRoutes: FastifyPluginAsync = async (app) => {
             task.status,
             task.priority,
             task.dueDate ? task.dueDate.toISOString() : '',
-            task.tags.map((t) => t.value).join(';'),
             task.createdAt.toISOString(),
             task.updatedAt.toISOString(),
           ]),
@@ -115,7 +109,7 @@ const exportRoutes: FastifyPluginAsync = async (app) => {
       return reply.status(400).send({ error: message });
     }
 
-    const { projectIds: rawProjectIds, status, priority, tagIds: rawTagIds, from, to } = queryParsed.data;
+    const { projectIds: rawProjectIds, status, priority, from, to } = queryParsed.data;
 
     // Resolve project ids: use provided list or all owned projects
     let projectIds: string[];
@@ -142,8 +136,6 @@ const exportRoutes: FastifyPluginAsync = async (app) => {
       return reply;
     }
 
-    const tagIds = rawTagIds ? rawTagIds.split(',').filter(Boolean) : [];
-
     const dueDateFilter: Record<string, Date> = {};
     if (from) dueDateFilter['gte'] = new Date(from);
     if (to) dueDateFilter['lte'] = new Date(to);
@@ -160,10 +152,8 @@ const exportRoutes: FastifyPluginAsync = async (app) => {
     };
 
     const tasks = await prisma.task.findMany({
-      where: tagIds.length > 0
-        ? { ...where, tags: { some: { id: { in: tagIds } } } }
-        : where,
-      include: { tags: true, project: { select: { name: true } } },
+      where,
+      include: { project: { select: { name: true } } },
       orderBy: [{ dueDate: { sort: 'asc', nulls: 'last' } }, { createdAt: 'desc' }],
     });
 
@@ -184,7 +174,6 @@ const exportRoutes: FastifyPluginAsync = async (app) => {
           task.status,
           task.priority,
           task.dueDate ? task.dueDate.toISOString() : '',
-          task.tags.map((t) => t.value).join(';'),
           task.createdAt.toISOString(),
           task.updatedAt.toISOString(),
         ]),

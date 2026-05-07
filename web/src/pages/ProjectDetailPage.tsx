@@ -515,6 +515,7 @@ export function ProjectDetailPage({ projectId, onBack }: ProjectDetailPageProps)
       {createStatus && (
         <CreateTaskModal
           projectId={projectId}
+          projectName={project.name}
           defaultStatus={createStatus}
           open={true}
           onClose={() => setCreateStatus(null)}

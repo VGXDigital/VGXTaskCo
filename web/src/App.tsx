@@ -12,6 +12,7 @@ import { SettingsApiTokensPage } from './pages/SettingsApiTokensPage'
 import { SettingsWebhooksPage } from './pages/SettingsWebhooksPage'
 import { AppShell } from './components/layout/AppShell'
 import { AuthCallbackPage } from './pages/AuthCallbackPage'
+import { CreateTaskModal } from './components/tasks/CreateTaskModal'
 
 const DARK_KEY = 'vgxt-dark'
 
@@ -33,6 +34,7 @@ export function App() {
   const [loggedIn, setLoggedIn] = useState(isLoggedIn())
   const [darkMode, setDarkMode] = useState(getInitialDark)
   const [route, setRoute] = useState<Route>({ page: 'dashboard' })
+  const [createOpen, setCreateOpen] = useState(false)
 
   useEffect(() => {
     if (darkMode) {
@@ -42,6 +44,19 @@ export function App() {
     }
     localStorage.setItem(DARK_KEY, String(darkMode))
   }, [darkMode])
+
+  // Global N shortcut — skipped on project pages (ProjectDetailPage handles those
+  // so the modal gets the correct project pre-selected)
+  useEffect(() => {
+    if (route.page === 'project') return
+    function onKey(e: KeyboardEvent) {
+      const tag = (e.target as HTMLElement).tagName
+      if (['INPUT', 'TEXTAREA', 'SELECT'].includes(tag)) return
+      if (e.key === 'n' || e.key === 'N') setCreateOpen(true)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [route.page])
 
   function handleLogin() {
     setLoggedIn(isLoggedIn())
@@ -88,6 +103,7 @@ export function App() {
         return (
           <DashboardPage
             onNavigateToProject={(id) => navigate({ page: 'project', id })}
+            onCreateTask={() => setCreateOpen(true)}
           />
         )
       case 'projects':
@@ -127,6 +143,13 @@ export function App() {
       >
         {renderPage()}
       </AppShell>
+
+      {/* Global create-task modal — used on dashboard and all non-project pages */}
+      <CreateTaskModal
+        open={createOpen}
+        onClose={() => setCreateOpen(false)}
+      />
+
       <Toaster richColors position="top-right" />
     </>
   )

@@ -1,13 +1,11 @@
 // Copyright (c) 2026 VGX Global Consulting (OPC) Private Limited. All rights reserved.
 
-import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { AlertCircle, Clock, FolderKanban, Plus } from 'lucide-react'
 import { isPast, parseISO } from 'date-fns'
 import { apiClient } from '../lib/api-client'
 import { useProjects } from '../hooks/useProjects'
 import { useTasks } from '../hooks/useTasks'
-import { CreateTaskModal } from '../components/tasks/CreateTaskModal'
 import { Button } from '../components/ui/Button'
 import type { Task, User } from '../types'
 
@@ -33,9 +31,10 @@ function useFirstProjectTasks(projectId?: string) {
 
 interface DashboardPageProps {
   onNavigateToProject: (id: string) => void
+  onCreateTask?: () => void
 }
 
-export function DashboardPage({ onNavigateToProject }: DashboardPageProps) {
+export function DashboardPage({ onNavigateToProject, onCreateTask }: DashboardPageProps) {
   const { data: me, isLoading: meLoading } = useQuery<User>({
     queryKey: ['me'],
     queryFn: () => apiClient.get<User>('/auth/me'),
@@ -49,8 +48,6 @@ export function DashboardPage({ onNavigateToProject }: DashboardPageProps) {
 
   const dueTodayCount = firstProjectTasks.filter(isDueTodayTask).length
   const overdueCount = firstProjectTasks.filter(isOverdueTask).length
-
-  const [quickAddOpen, setQuickAddOpen] = useState(false)
 
   const loading = meLoading || projectsLoading
 
@@ -71,8 +68,8 @@ export function DashboardPage({ onNavigateToProject }: DashboardPageProps) {
           </h1>
           <p className="text-base text-gray-500 dark:text-gray-400">Here's an overview of your workspace.</p>
         </div>
-        {firstProjectId && (
-          <Button onClick={() => setQuickAddOpen(true)} size="sm">
+        {projects.length > 0 && (
+          <Button onClick={() => onCreateTask?.()} size="sm">
             <Plus className="h-4 w-4" />
             Quick task
           </Button>
@@ -137,14 +134,6 @@ export function DashboardPage({ onNavigateToProject }: DashboardPageProps) {
         </div>
       )}
 
-      {/* Quick add modal */}
-      {firstProjectId && (
-        <CreateTaskModal
-          projectId={firstProjectId}
-          open={quickAddOpen}
-          onClose={() => setQuickAddOpen(false)}
-        />
-      )}
     </div>
   )
 }

@@ -7,12 +7,9 @@ export const BASE_URL = (import.meta.env.VITE_API_URL as string | undefined)
 
 async function request<T>(method: string, path: string, body?: unknown): Promise<T> {
   const token = getToken()
-  const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
-  }
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`
-  }
+  const headers: Record<string, string> = {}
+  if (body !== undefined) headers['Content-Type'] = 'application/json'
+  if (token) headers['Authorization'] = `Bearer ${token}`
 
   const response = await fetch(`${BASE_URL}${path}`, {
     method,

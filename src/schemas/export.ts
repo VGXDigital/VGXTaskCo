@@ -10,7 +10,6 @@ export const exportProjectTasksQuerySchema = z
   .object({
     status: z.nativeEnum(TaskStatus).optional(),
     priority: z.nativeEnum(Priority).optional(),
-    tagIds: z.string().optional(),
     includeArchived: z.enum(['true', 'false']).optional(),
   })
   .strict();
@@ -23,7 +22,6 @@ export const exportAllTasksQuerySchema = z
     projectIds: z.string().optional(),
     status: z.nativeEnum(TaskStatus).optional(),
     priority: z.nativeEnum(Priority).optional(),
-    tagIds: z.string().optional(),
     from: z.string().datetime({ message: 'from must be an ISO 8601 datetime string' }).optional(),
     to: z.string().datetime({ message: 'to must be an ISO 8601 datetime string' }).optional(),
   })
