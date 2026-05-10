@@ -2,9 +2,11 @@
 
 **Version: 0.7.2**
 
-The reference implementation for [VGX Global Consulting's AI-Powered Development with Claude masterclass](https://vgx.guru). Built live during the course to demonstrate AI-assisted full-stack development — every commit, prompt, and architectural decision is traceable to the build sequence in `vgxtaskco-build.md`.
+The reference implementation for [VGX Global Consulting's AI-Powered Development with Claude masterclass](https://vgx.guru). Built live using Claude Code to demonstrate AI-assisted full-stack development — the entire codebase, test suite, and deployment pipeline was written by AI in a single day.
 
-> This is the benchmark app, not the course handouts. If you're a cohort participant, you're building your own version — not copying this one.
+**Live app:** [taskco.vgx.guru](https://taskco.vgx.guru)
+
+> This is the benchmark app. If you're a cohort participant, you're building your own version — the prompt sequence that built this is part of the course.
 
 ---
 
