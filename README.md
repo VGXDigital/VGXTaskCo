@@ -1,6 +1,6 @@
 # VGXTaskCo
 
-**Version: 0.7.3**
+**Version: 0.7.4**
 
 The reference implementation for [VGX Global Consulting's AI-Powered Development with Claude masterclass](https://vgx.guru). Built live using Claude Code to demonstrate AI-assisted full-stack development — the entire codebase, test suite, and deployment pipeline was written by AI in a single day.
 
@@ -60,9 +60,9 @@ For VGX VPS: see [VPS Setup](prompts/VPS-SETUP.md) + GitHub Actions workflow in 
 
 ## Changelog
 
-### 0.7.3 (2026-05-10)
+### 0.7.4 (2026-05-10)
 
-- Added GitHub icon link to footer (sidebar and login page) — links to public benchmark repo, works in light and dark mode
+- Fixed GitHub icon in footer — replaced missing lucide-react export with inline SVG, works in light and dark mode
 - Added live app link (`taskco.vgx.guru`) to README
 
 ### 0.7.2 (2026-05-07)
