@@ -17,7 +17,7 @@ const authRoutes: FastifyPluginAsync = async (app) => {
    * Creates a new local user account and returns a JWT.
    * Rate limited to 5 requests per minute per IP to prevent account creation spam.
    */
-  app.post('/register', { config: { rateLimit: { max: 5, timeWindow: '1 minute' } } }, async (request, reply) => {
+  app.post('/register', { config: { rateLimit: { max: 20, timeWindow: '1 minute' } } }, async (request, reply) => {
     const parsed = registerBodySchema.safeParse(request.body);
     if (!parsed.success) {
       const message = parsed.error.issues[0]?.message ?? 'Validation error';
