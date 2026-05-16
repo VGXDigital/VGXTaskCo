@@ -19,7 +19,7 @@ export default defineConfig({
   use: {
     baseURL: E2E_GUI_URL,
     headless: true,
-    channel: 'msedge',
+    channel: process.env['CI'] ? undefined : 'msedge',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
     trace: 'retain-on-failure',

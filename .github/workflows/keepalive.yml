@@ -1,0 +1,53 @@
+# Copyright (c) 2026 VGX Global Consulting (OPC) Private Limited. All rights reserved.
+# VGXTaskCo — Keep-alive: runs the Playwright E2E suite against production twice daily
+# to prevent Neon (database) and Supabase (auth) free tiers from going dormant.
+
+name: Keep-Alive E2E
+
+on:
+  schedule:
+    - cron: '0 7 * * *'   # 07:00 UTC — morning ping
+    - cron: '0 19 * * *'  # 19:00 UTC — evening ping
+  workflow_dispatch:        # manual trigger for testing
+
+jobs:
+  e2e-production:
+    name: Playwright vs production
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright browsers
+        run: npx playwright install chromium --with-deps
+
+      - name: Run E2E against production
+        env:
+          E2E_ENV: prod
+        run: pnpm test:features
+
+      - name: Upload failure artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-failure-${{ github.run_id }}
+          path: |
+            playwright-report/
+            tests/feature-matrix-report.json
+          retention-days: 7
