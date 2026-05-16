@@ -6,8 +6,7 @@ name: Keep-Alive E2E
 
 on:
   schedule:
-    - cron: '0 7 * * *'   # 07:00 UTC — morning ping
-    - cron: '0 19 * * *'  # 19:00 UTC — evening ping
+    - cron: '0 7 * * *'   # 07:00 UTC daily
   workflow_dispatch:        # manual trigger for testing
 
 jobs:
