@@ -43,6 +43,9 @@ interface AuthState {
   token: string;
   userId: string;
   email: string;
+  secondToken: string;
+  secondUserId: string;
+  secondEmail: string;
 }
 
 const MATRIX: MatrixEntry[] = JSON.parse(
@@ -103,15 +106,9 @@ async function apiFetch(
 
 // ── Helper: create second user ─────────────────────────────────────────────────
 
-async function createTestUser(prefix: string): Promise<AuthState> {
-  const email = `${prefix}-${Date.now()}@vgxtaskco.test`;
-  const res = await fetch(`${BASE_URL}/auth/register`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, password: 'TestPass!!2026', name: prefix }),
-  });
-  const json = (await res.json()) as { data: { token: string; user: { id: string; email: string } } };
-  return { token: json.data.token, userId: json.data.user.id, email: json.data.user.email };
+function createTestUser(_prefix: string): AuthState {
+  const auth = loadAuthState();
+  return { token: auth.secondToken, userId: auth.secondUserId, email: auth.secondEmail };
 }
 
 // ── Helper: create project via API ─────────────────────────────────────────────
@@ -387,16 +384,11 @@ async function runApiTest(entry: MatrixEntry): Promise<void> {
     }
 
     case 'auth-002': {
-      const email = `${prefix}@vgxtaskco.test`;
-      await fetch(`${BASE_URL}/auth/register`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password: 'ValidPass!!2026', name: 'Test' }),
-      });
+      const email = auth.email;
       const res = await fetch(`${BASE_URL}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password: 'ValidPass!!2026' }),
+        body: JSON.stringify({ email, password: 'E2eTestPass!!2026' }),
       });
       expect(res.status, `[${entry.id}] Expected 200 from login`).toBe(200);
       const body = (await res.json()) as AnyJson;
@@ -1648,17 +1640,12 @@ async function runDbTest(entry: MatrixEntry): Promise<void> {
   switch (entry.id) {
 
     case 'auth-010': {
-      // Verify lastLoginAt updated: register + login, then check /auth/me or activity
-      const email = `${prefix}@test.test`;
-      await fetch(`${BASE_URL}/auth/register`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password: 'ValidPass!!2026', name: 'Test' }),
-      });
+      // Verify lastLoginAt updated: login with main user, check /auth/me
+      const email = auth.email;
       const loginRes = await fetch(`${BASE_URL}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password: 'ValidPass!!2026' }),
+        body: JSON.stringify({ email, password: 'E2eTestPass!!2026' }),
       });
       expect(loginRes.status, `[${entry.id}] Login must succeed`).toBe(200);
       // If there's a /auth/me endpoint with lastLoginAt, verify it
@@ -1689,16 +1676,9 @@ async function runDbTest(entry: MatrixEntry): Promise<void> {
     }
 
     case 'views-001': {
-      // Register a new user and check that 3 saved views are seeded
-      const email = `${prefix}@test.test`;
-      const regRes = await fetch(`${BASE_URL}/auth/register`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password: 'ValidPass!!2026', name: 'Views Test' }),
-      });
-      const regBody = (await regRes.json()) as { data: { token: string } };
+      // Verify 3 default views were seeded when the second user was registered in global-setup
       const viewsRes = await fetch(`${BASE_URL}/views`, {
-        headers: { Authorization: `Bearer ${regBody.data.token}` },
+        headers: { Authorization: `Bearer ${auth.secondToken}` },
       });
       const viewsBody = (await viewsRes.json()) as { data: unknown[] };
       expect(viewsBody.data.length, `[${entry.id}] 3 default views should be seeded on register`).toBe(3);

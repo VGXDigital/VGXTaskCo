@@ -16,15 +16,21 @@ async function globalTeardown(): Promise<void> {
 
   const authState = JSON.parse(readFileSync(AUTH_STATE_PATH, 'utf8')) as AuthState;
 
-  const res = await fetch(`${BASE_URL}/auth/me`, {
-    method: 'DELETE',
-    headers: { Authorization: `Bearer ${authState.token}` },
-  });
+  const deleteUser = async (token: string, email: string): Promise<void> => {
+    const res = await fetch(`${BASE_URL}/auth/me`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (res.ok || res.status === 404) {
+      console.log(`[global-teardown] Deleted: ${email}`);
+    } else {
+      console.warn(`[global-teardown] Failed to delete ${email}: ${res.status}`);
+    }
+  };
 
-  if (res.ok || res.status === 404) {
-    console.log(`[global-teardown] Test user deleted: ${authState.email}`);
-  } else {
-    console.warn(`[global-teardown] Failed to delete test user: ${res.status}`);
+  await deleteUser(authState.token, authState.email);
+  if (authState.secondToken) {
+    await deleteUser(authState.secondToken, authState.secondEmail);
   }
 
   unlinkSync(AUTH_STATE_PATH);
