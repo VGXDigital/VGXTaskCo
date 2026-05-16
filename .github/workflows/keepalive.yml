@@ -40,6 +40,8 @@ jobs:
       - name: Run E2E against production
         env:
           E2E_ENV: prod
+          E2E_BASE_URL: https://vgxtaskco-api.fly.dev
+          E2E_FRONTEND_URL: https://taskco.vgx.guru
         run: pnpm test:features
 
       - name: Upload failure artifacts
