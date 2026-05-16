@@ -1,6 +1,7 @@
 // Copyright (c) 2026 VGX Global Consulting (OPC) Private Limited. All rights reserved.
 
 import type { FastifyPluginAsync } from 'fastify';
+import { Prisma } from '@prisma/client';
 import { prisma } from '../lib/prisma.js';
 import { hashPassword, verifyPassword } from '../lib/hash.js';
 import { signJwt } from '../lib/jwt.js';
@@ -32,10 +33,18 @@ const authRoutes: FastifyPluginAsync = async (app) => {
 
     const passwordHash = await hashPassword(password);
 
-    const user = await prisma.user.create({
-      data: { email, passwordHash, name, provider: 'local' },
-      select: { id: true, email: true, name: true },
-    });
+    let user: { id: string; email: string; name: string };
+    try {
+      user = await prisma.user.create({
+        data: { email, passwordHash, name, provider: 'local' },
+        select: { id: true, email: true, name: true },
+      });
+    } catch (err) {
+      if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
+        return reply.status(409).send({ error: 'Email already in use' });
+      }
+      throw err;
+    }
 
     const token = await signJwt({ userId: user.id });
 

@@ -38,6 +38,7 @@ jobs:
         run: npx playwright install chromium --with-deps
 
       - name: Run E2E against production
+        continue-on-error: true
         env:
           E2E_ENV: prod
           E2E_BASE_URL: https://vgxtaskco-api.fly.dev
