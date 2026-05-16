@@ -1977,6 +1977,10 @@ async function runWebhookTest(entry: MatrixEntry): Promise<void> {
   switch (entry.id) {
 
     case 'webhook-005': {
+      if (!BASE_URL.includes('localhost')) {
+        console.warn(`[${entry.id}] Skipping — mock receiver cannot receive from remote server`);
+        break;
+      }
       const receiver = await startMockReceiver();
       try {
         // Create webhook pointing to our mock receiver
@@ -2011,6 +2015,10 @@ async function runWebhookTest(entry: MatrixEntry): Promise<void> {
     }
 
     case 'webhook-006': {
+      if (!BASE_URL.includes('localhost')) {
+        console.warn(`[${entry.id}] Skipping — mock receiver cannot receive from remote server`);
+        break;
+      }
       const receiver = await startMockReceiver();
       try {
         const createRes = await apiFetch('/webhooks', {
