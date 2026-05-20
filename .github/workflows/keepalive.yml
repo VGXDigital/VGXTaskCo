@@ -1,6 +1,6 @@
 # Copyright (c) 2026 VGX Global Consulting (OPC) Private Limited. All rights reserved.
-# VGXTaskCo — Keep-alive: runs the Playwright E2E suite against production twice daily
-# to prevent Neon (database) and Supabase (auth) free tiers from going dormant.
+# VGXTaskCo — Keep-alive: runs the Playwright E2E suite against production daily
+# and pings Supabase directly to prevent Neon and Supabase free tiers going dormant.
 
 name: Keep-Alive E2E
 
@@ -35,6 +35,15 @@ jobs:
 
       - name: Install Playwright browsers
         run: npx playwright install chromium --with-deps
+
+      - name: Ping Supabase to prevent dormancy
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          curl -sf -o /dev/null -w "Supabase status: %{http_code}\n" \
+            "${SUPABASE_URL}/auth/v1/settings" \
+            -H "apikey: ${SUPABASE_ANON_KEY}"
 
       - name: Run E2E against production
         continue-on-error: true
