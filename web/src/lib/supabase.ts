@@ -8,6 +8,7 @@ export function getSSOUrl(provider: 'google' | 'github', redirectTo: string): st
   const params = new URLSearchParams({
     provider,
     redirect_to: redirectTo,
+    flow_type: 'implicit',
   })
   return `${SUPABASE_URL}/auth/v1/authorize?${params.toString()}`
 }
