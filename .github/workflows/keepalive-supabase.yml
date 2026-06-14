@@ -1,0 +1,26 @@
+# Copyright (c) 2026 VGX Global Consulting (OPC) Private Limited. All rights reserved.
+# VGXTaskCo — Keep-alive: queries the Supabase keepalive table to prevent the free-tier project from pausing.
+
+name: Keep-Alive Supabase
+
+on:
+  schedule:
+    - cron: '0 7 * * *'   # 07:00 UTC daily
+  workflow_dispatch:        # manual trigger for testing
+
+jobs:
+  ping-supabase:
+    name: Ping Supabase keepalive table
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Ping Supabase keepalive table
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          curl -sf -o /dev/null -w "Supabase keepalive status: %{http_code}\n" \
+            "${SUPABASE_URL}/rest/v1/keepalive?select=*" \
+            -H "apikey: ${SUPABASE_ANON_KEY}" \
+            -H "Authorization: Bearer ${SUPABASE_ANON_KEY}"

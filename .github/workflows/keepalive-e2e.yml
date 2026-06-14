@@ -1,6 +1,6 @@
 # Copyright (c) 2026 VGX Global Consulting (OPC) Private Limited. All rights reserved.
 # VGXTaskCo — Keep-alive: runs the Playwright E2E suite against production daily
-# and queries the Supabase keepalive table to prevent the free-tier project from pausing.
+# to prevent the Neon database free-tier from going dormant.
 
 name: Keep-Alive E2E
 
@@ -35,17 +35,6 @@ jobs:
 
       - name: Install Playwright browsers
         run: npx playwright install chromium --with-deps
-
-      - name: Ping Supabase keepalive table
-        continue-on-error: true
-        env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
-        run: |
-          curl -sf -o /dev/null -w "Supabase keepalive status: %{http_code}\n" \
-            "${SUPABASE_URL}/rest/v1/keepalive?select=*" \
-            -H "apikey: ${SUPABASE_ANON_KEY}" \
-            -H "Authorization: Bearer ${SUPABASE_ANON_KEY}"
 
       - name: Run E2E against production
         continue-on-error: true
