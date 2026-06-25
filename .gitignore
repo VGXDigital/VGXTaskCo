@@ -21,3 +21,12 @@ build-report.md
 *.key
 scripts/
 prompts/INSTRUCTOR-NOTES.md
+
+# Feature matrix test artifacts
+tests/e2e/.auth-state.json
+tests/feature-matrix-report.json
+tests/feature-matrix-report.md
+tests/autocorrect-log.jsonl
+tests/autocorrect-final-report.md
+playwright-report/
+test-results/

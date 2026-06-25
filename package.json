@@ -12,7 +12,11 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-    "build:run": "node scripts/build-runner.mjs"
+    "build:run": "node scripts/build-runner.mjs",
+    "test:features": "playwright test tests/e2e/",
+    "test:features:headed": "playwright test tests/e2e/ --headed",
+    "verify:features": "node scripts/feature-autocorrect.mjs --only-critical --max-iterations 1",
+    "verify:features:autofix": "node scripts/feature-autocorrect.mjs --max-iterations 5"
   },
   "dependencies": {
     "@fastify/cors": "^11.2.0",
@@ -33,6 +37,7 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@playwright/test": "^1.59.1",
     "@types/bcrypt": "^6.0.0",
     "@types/node": "^25.6.0",
     "@typescript-eslint/eslint-plugin": "^8.59.2",

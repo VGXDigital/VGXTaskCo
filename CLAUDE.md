@@ -30,6 +30,11 @@ pnpm test tests/routes/tasks.test.ts
 pnpm dev                      # :5173
 pnpm test                     # 102 unit tests (Vitest + jsdom)
 pnpm typecheck
+
+# E2E (needs both dev servers running)
+pnpm test:features            # full Playwright suite
+pnpm test:features:headed     # headed for debugging
+pnpm verify:features:autofix  # autonomous fix loop (max 5 iterations)
 ```
 
 ## Architecture
