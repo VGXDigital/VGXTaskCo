@@ -1,5 +1,5 @@
 // Copyright (c) 2026 VGX Global Consulting (OPC) Private Limited. All rights reserved.
-// Prisma schema for VGXTaskCo
+// Prisma schema for vgx-taskco
 
 generator client {
   provider = "prisma-client-js"

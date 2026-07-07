@@ -2,7 +2,7 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-# VGXTaskCo
+# vgx-taskco
 
 A full-stack task management app built as the VGX Global Consulting AI-Assisted Development masterclass reference implementation. Live at [taskco.vgx.guru](https://taskco.vgx.guru).
 

@@ -166,7 +166,7 @@ const webhookRoutes: FastifyPluginAsync = async (app) => {
       return reply.status(404).send({ error: 'Webhook not found' });
     }
 
-    void dispatchWebhook('test', { message: 'VGXTaskCo webhook test' }, request.user.id);
+    void dispatchWebhook('test', { message: 'vgx-taskco webhook test' }, request.user.id);
 
     return reply.status(200).send({ data: { dispatched: true } });
   });

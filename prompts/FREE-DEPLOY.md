@@ -1,6 +1,6 @@
 # Free Deployment Guide
 
-Deploy VGXTaskCo for free using services that match the existing stack:
+Deploy vgx-taskco for free using services that match the existing stack:
 
 | Layer | Service | Free tier |
 |---|---|---|

@@ -13,7 +13,7 @@ declare module 'fastify' {
 }
 
 /**
- * Fastify preHandler that accepts either a VGXTaskCo API token (vgxt_...) or a JWT.
+ * Fastify preHandler that accepts either a vgx-taskco API token (vgxt_...) or a JWT.
  *
  * API token path:
  *   - Extract prefix (first 8 chars after "vgxt_")

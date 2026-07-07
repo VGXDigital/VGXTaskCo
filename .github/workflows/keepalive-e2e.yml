@@ -1,5 +1,5 @@
 # Copyright (c) 2026 VGX Global Consulting (OPC) Private Limited. All rights reserved.
-# VGXTaskCo — Keep-alive: runs the Playwright E2E suite against production daily
+# vgx-taskco — Keep-alive: runs the Playwright E2E suite against production daily
 # to prevent the Neon database free-tier from going dormant.
 
 name: Keep-Alive E2E

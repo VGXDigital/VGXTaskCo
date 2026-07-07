@@ -1,6 +1,6 @@
 # n8n Reminder Flow Setup
 
-This document describes how to set up the n8n automation that sends daily task reminders using the VGXTaskCo service endpoints.
+This document describes how to set up the n8n automation that sends daily task reminders using the vgx-taskco service endpoints.
 
 ## Prerequisites
 
@@ -50,7 +50,7 @@ return Object.values(grouped).map(group => ({ json: group }));
 ### 4. Send Email Node (one per owner, triggered by the split output)
 
 - To: `{{ $json.owner.email }}`
-- Subject: `VGXTaskCo — You have {{ $json.tasks.length }} task(s) due today`
+- Subject: `vgx-taskco — You have {{ $json.tasks.length }} task(s) due today`
 - Body (HTML):
 
 ```html
@@ -61,7 +61,7 @@ return Object.values(grouped).map(group => ({ json: group }));
   <li><strong>{{ this.title }}</strong> — {{ this.priority }} priority</li>
   {{/each}}
 </ul>
-<p>Log in to VGXTaskCo to review and update them.</p>
+<p>Log in to vgx-taskco to review and update them.</p>
 ```
 
 ## Notes

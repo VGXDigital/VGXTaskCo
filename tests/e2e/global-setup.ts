@@ -1,7 +1,7 @@
 // Copyright (c) 2026 VGX Global Consulting (OPC) Private Limited. All rights reserved.
 
 /**
- * Playwright global setup for VGXTaskCo feature-matrix tests.
+ * Playwright global setup for vgx-taskco feature-matrix tests.
  *
  * Creates a test user via POST /auth/register and persists the JWT to
  * tests/e2e/.auth-state.json so all subsequent test files can reuse it

@@ -1,7 +1,7 @@
 // Copyright (c) 2026 VGX Global Consulting (OPC) Private Limited. All rights reserved.
 
 /**
- * VGXTaskCo Feature Matrix E2E Spec
+ * vgx-taskco Feature Matrix E2E Spec
  *
  * Reads tests/feature-matrix.json and runs a Playwright test per entry.
  * - verifyType: "api"     → fetch-based API assertion
@@ -204,7 +204,7 @@ test.afterAll(() => {
   const passRate = total > 0 ? ((passed / total) * 100).toFixed(1) : '0.0';
 
   const lines: string[] = [
-    '# VGXTaskCo Feature Matrix Report',
+    '# vgx-taskco Feature Matrix Report',
     '',
     `Generated: ${new Date().toISOString()}`,
     '',

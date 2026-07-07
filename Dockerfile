@@ -1,5 +1,5 @@
 # Copyright (c) 2026 VGX Global Consulting (OPC) Private Limited. All rights reserved.
-# VGXTaskCo — Backend multi-stage Dockerfile
+# vgx-taskco — Backend multi-stage Dockerfile
 
 # ---------- Stage 1: Dependencies ----------
 FROM node:22-alpine AS deps
@@ -22,7 +22,7 @@ FROM node:22-alpine AS runtime
 
 LABEL maintainer="VGX Consulting <info@vgx.digital>"
 LABEL org.opencontainers.image.source="https://github.com/vgxconsulting/vgx-taskco"
-LABEL org.opencontainers.image.description="VGXTaskCo — Task management API"
+LABEL org.opencontainers.image.description="vgx-taskco — Task management API"
 
 WORKDIR /app
 

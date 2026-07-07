@@ -2,7 +2,7 @@
 
 ## Frontmatter
 
-Apply this skill whenever adding, modifying, or removing a REST endpoint in VGXTaskCo. This covers new routes, schema changes, middleware additions, and any test updates for endpoint behaviour.
+Apply this skill whenever adding, modifying, or removing a REST endpoint in vgx-taskco. This covers new routes, schema changes, middleware additions, and any test updates for endpoint behaviour.
 
 ## File Pattern
 
