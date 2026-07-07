@@ -1,4 +1,4 @@
-# VGXTaskCo
+# vgx-taskco
 
 **Version: 0.7.4**
 
@@ -54,11 +54,13 @@ pnpm test:features
 
 See [Free Deployment Guide](prompts/FREE-DEPLOY.md) — Fly.io (backend) + Vercel (frontend).
 
-For VGX VPS: see [VPS Setup](prompts/VPS-SETUP.md) + GitHub Actions workflow in `.github/workflows/deploy.yml`.
-
 ---
 
 ## Changelog
+
+### 0.7.5 (2026-07-07)
+
+- Removed dead VPS deploy stack (Caddyfile, docker-compose.dev/prod.yml, deploy.yml workflow, VPS-SETUP.md, web/Dockerfile) — deploy is Fly.io (backend) + Vercel (frontend) only
 
 ### 0.7.4 (2026-05-10)
 
